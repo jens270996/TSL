@@ -1,6 +1,3 @@
-module Parsing.Parser where
-import TSL.AST
-import Utils.Error (ErrorMonad)
+module Parsing.Parser (parseProgram) where
 
-parseProgram:: String -> ErrorMonad Program
-parseProgram s = Right (Program (Involution "x" (PVar "x") [] SSkip (PVar "x")) [])
+import Parsing.Implementation.Parser

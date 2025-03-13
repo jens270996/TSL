@@ -2,13 +2,12 @@ module TSL.AST where
 
 type Variable = String
 type Identifier = String
-
-data Program = Program Involution [Function]
+type Atom = String
+data Program = Program Involution [Involution] [Procedure]
     deriving (Eq, Show, Read)
 
-type Function = Either Procedure Involution
 
-data Involution = Involution Identifier Pattern [Statement] SymmetricStatement Pattern
+data Involution = Involution Identifier Pattern [Statement] SymmetricStatement
     deriving (Eq, Show, Read)
 
 data Procedure = Procedure Identifier Pattern [Statement] Pattern
@@ -48,8 +47,8 @@ data Expression =
 
 data Constant =
     Integer Int
-    | Atom String
-    | Nill
+    | Atom Atom
+    | Nil
     | CPair Constant Constant
     deriving (Eq, Show, Read)
 

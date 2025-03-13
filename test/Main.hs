@@ -1,4 +1,8 @@
 module Main (main) where
 
+import Test.Tasty
+import ParserTests
+import InterpreterTests
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented."
+main = defaultMain $ testGroup "TSL tests" [ParserTests.tests, InterpreterTests.tests]
