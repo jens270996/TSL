@@ -62,8 +62,11 @@ library
     exposed-modules:
         Parsing.Parser
         Parsing.Implementation.Parser
+        Wellformedness.Wellformed
+        Wellformedness.Implementation.Wellformed
         TSL.AST
         Utils.Error
+        Utils.AST
 
     -- Modules included in this library but not exported.
     -- other-modules:

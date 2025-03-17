@@ -20,7 +20,7 @@ tests =
         , constantTests
         , patternTests
         , statementTests
-        , symmetricStatementTests
+        --, symmetricStatementTests
         , procedureTests
         , involutionTests
         , programTests
@@ -28,41 +28,47 @@ tests =
 
 programTests :: TestTree
 programTests = testGroup "Program tests"
-    [
-
+    [ parseProgramT "Single involution" "involution f (x.y) x <- y" (Program (Involution "f" (PPair (PVar "x") (PVar "y")) [(Replacement (PVar "x") (PVar "y"))]) [] [])
+    , parseProgramT "Multiple involutions and procedues" "involution f (x.y) x <- y  involution f (x.y) x+=y x <- y procedure f (x.y) x+=y x <- y return (x.y) "
+                        (Program (Involution "f" (PPair (PVar "x") (PVar "y")) [(Replacement (PVar "x") (PVar "y"))]) [(Involution "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")])] [(Procedure "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")] (PPair (PVar "x") (PVar "y")))])
+    , parseProgramT "Mangled procedures and involutions" "involution f (x.y) x <- y procedure f (x.y) x+=y x <- y return (x.y) involution f (x.y) x+=y x <- y"
+                        (Program (Involution "f" (PPair (PVar "x") (PVar "y")) [(Replacement (PVar "x") (PVar "y"))]) [(Involution "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")])] [(Procedure "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")] (PPair (PVar "x") (PVar "y")))])
+    , parseProgramFail "Single procedure" "procedure f (x.y) x+=y return (x.y)"
     ]
     where
      parseProgramT = parseSuccessfully pProgram
-     parseProgramTFail = parseFail pProgram
+     parseProgramFail = parseFail pProgram
 
 involutionTests :: TestTree
 involutionTests = testGroup "Involution tests"
-    [
-        -- TODO
+    [ parseInvolution "Basic involution" "involution f (x.y) x <- y" (Involution "f" (PPair (PVar "x") (PVar "y")) [(Replacement (PVar "x") (PVar "y"))])
+    -- parseInvolutionFail "Non time-symmetric body"  "involution f (x.y) x+=y return (x.y)" Removed since this check is defered to wellformedness check.
+    , parseInvolution "Multiple statements" "involution f (x.y) x+=y x <- y" (Involution "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")])
     ]
     where
-     parseSymStatement = parseSuccessfully pSymmetricStatement
-     parseSymStatementFail = parseFail pSymmetricStatement
+     parseInvolution = parseSuccessfully pInvolution
+     parseInvolutionFail = parseFail pInvolution
 
 procedureTests :: TestTree
 procedureTests = testGroup "Procedure tests"
-    [
-        -- TODO
+    [ parseProcedure "Basic procedure" "procedure f (x.y) x+=y return (x.y)" (Procedure "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y")] (PPair (PVar "x") (PVar "y")))
+    , parseProcedure "Multiple statements" "procedure f (x.y) x+=y x <- y return (x.y)" (Procedure "f" (PPair (PVar "x") (PVar "y")) [Assign AddR "x" (EVar "y"),Replacement (PVar "x") (PVar "y")] (PPair (PVar "x") (PVar "y")))
+    , parseProcedureFail "Keyword as procedure name" "procedure loop (x.y) x+=y return (x.y)"
     ]
     where
-     parseSymStatement = parseSuccessfully pSymmetricStatement
-     parseSymStatementFail = parseFail pSymmetricStatement
+     parseProcedure = parseSuccessfully pProcedure
+     parseProcedureFail = parseFail pProcedure
 
-symmetricStatementTests :: TestTree
-symmetricStatementTests = testGroup "Symmetric statement tests"
-    [ parseSymStatementFail "Reversible assignment add" "x+= '3"
-    , parseSymStatement "XOR assignment" "x^= '3" (XorAssign "x" (Constant (Integer 3)))
-    , parseSymStatement "Replacement" "(x.y) <- '(2.3)" (SReplacement (PPair (PVar "x") (PVar "y")) (PConst (CPair (Integer 2) (Integer 3))))
-    , parseSymStatement "Skip" "skip" SSkip
-    ]
-    where
-     parseSymStatement = parseSuccessfully pSymmetricStatement
-     parseSymStatementFail = parseFail pSymmetricStatement
+-- symmetricStatementTests :: TestTree
+-- symmetricStatementTests = testGroup "Symmetric statement tests"
+--     [ parseSymStatementFail "Reversible assignment add" "x+= '3"
+--     , parseSymStatement "XOR assignment" "x^= '3" (XorAssign "x" (Constant (Integer 3)))
+--     , parseSymStatement "Replacement" "(x.y) <- '(2.3)" (SReplacement (PPair (PVar "x") (PVar "y")) (PConst (CPair (Integer 2) (Integer 3))))
+--     , parseSymStatement "Skip" "skip" SSkip
+--     ]
+--     where
+--      parseSymStatement = parseSuccessfully pSymmetricStatement
+--      parseSymStatementFail = parseFail pSymmetricStatement
 
 statementTests :: TestTree
 statementTests = testGroup "Statement tests"
@@ -79,7 +85,7 @@ statementTests = testGroup "Statement tests"
                                                                                       )
     , parseStatement "Skip" "skip" Skip
     , parseStatement "Replacement" "(x.y) <- '(2.3)" (Replacement (PPair (PVar "x") (PVar "y")) (PConst (CPair (Integer 2) (Integer 3))))
-
+    , parseStatement "Simple replacement" "x <- y" (Replacement (PVar "x") (PVar "y"))
     ]
     where
     parseStatement = parseSuccessfully pStatement
@@ -89,7 +95,7 @@ statementTests = testGroup "Statement tests"
 
 patternTests :: TestTree
 patternTests = testGroup "Pattern tests"
-    [ parsePattern "Variable" "var" (PVar "var")
+    [ parsePattern "Variable" "x" (PVar "x")
     , parsePattern "Constant" "'42" (PConst (Integer 42))
     , parsePattern "Pair" "(var . '42)" (PPair (PVar "var") (PConst (Integer 42)))
     , parsePattern "Involute" "involute id x" (Involute "id" (PVar "x"))

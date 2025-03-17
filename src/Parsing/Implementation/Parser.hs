@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use <$>" #-}
 module Parsing.Implementation.Parser where
 
 import TSL.AST
@@ -29,60 +31,58 @@ pInvolution :: Parser Involution
 pInvolution = do keyword "involution"
                  name <- identifier
                  input <- pPattern
-                 body <- many pStatement
-                 sym <- pSymmetricStatement
-                 return $ Involution name input body sym
+                 body <- many1 pStatement
+                 return $ Involution name input body
 
 -- Procedures
 pProcedure :: Parser Procedure
 pProcedure = do keyword "procedure"
                 name <- identifier
                 input <- pPattern
-                body <- many1 pStatement
-                keyword "return"
+                body <- manyTill pStatement (keyword "return")
                 output <- pPattern
                 return $ Procedure name input body output
+
+
 -- Symmetric statement parsers
-pSymmetricStatement :: Parser SymmetricStatement
-pSymmetricStatement = choice [SSkip <$ keyword "skip", pXorAssignment, pSReplacement]
+-- pSymmetricStatement :: Parser SymmetricStatement
+-- pSymmetricStatement = choice [SSkip <$ keyword "skip", pXorAssignment, pSReplacement]
 
-pXorAssignment :: Parser SymmetricStatement
-pXorAssignment =
-    do var <- try variable
-       symbol "^"
-       symbol "="
-       exp <- pExpression
-       return $ XorAssign var exp
+-- pXorAssignment :: Parser SymmetricStatement
+-- pXorAssignment =
+--     do var <- variable
+--        symbol "^"
+--        symbol "="
+--        exp <- pExpression
+--        return $ XorAssign var exp
 
-pSReplacement :: Parser SymmetricStatement
-pSReplacement =
-    do p1 <- pPattern
-       symbol "<-"
-       p2 <- pPattern
-       return $ SReplacement p1 p2
+-- pSReplacement :: Parser SymmetricStatement
+-- pSReplacement =
+--     do p1 <- pPattern
+--        symbol "<-"
+--        p2 <- pPattern
+--        return $ SReplacement p1 p2
 
 
 -- Reversible statement parsers
 
 pStatement :: Parser Statement
 pStatement =
-    -- Maybe find other solution than try?
-    try (choice [ pLoop
+    choice [ pLoop
            , pConditional
            , Skip <$ keyword "skip"
-           , pReversibleAssignment
+           -- must have try since both replacement and assignment can start with variable
+           , try pReversibleAssignment
            , pReplacement
-           ])
+           ] <?> "Expecting a statement."
     
 pLoop :: Parser Statement
 pLoop =
     do keyword "from"
        e1 <- pExpression
        keyword "do"
-       s1 <- many1 pStatement
-       keyword "loop"
-       s2 <- many1 pStatement
-       keyword "until"
+       s1 <- manyTill pStatement (keyword "loop")
+       s2 <- manyTill pStatement (keyword "until")
        e2 <- pExpression
        return $ Loop e1 s1 s2 e2
 
@@ -91,10 +91,8 @@ pConditional =
     do keyword "if"
        e1 <- pExpression
        keyword "then"
-       s1 <- many1 pStatement
-       keyword "else"
-       s2 <- many1 pStatement
-       keyword "fi"
+       s1 <- manyTill pStatement (keyword "else")
+       s2 <- manyTill pStatement (keyword "fi")
        e2 <- pExpression
        return $ Conditional e1 s1 s2 e2
 
@@ -107,15 +105,15 @@ pReplacement =
     
 pReversibleAssignment :: Parser Statement
 pReversibleAssignment =
-    -- must have try since both replacement and assignment can start with variable
-    do var <- try variable
-       op <- pReversibleOp
-       symbol "="
-       exp <- pExpression
-       return $ Assign op var exp
+    (do var <- variable
+        op <- pReversibleOp
+        symbol "="
+        exp <- pExpression
+        return $ Assign op var exp) <?> "Expecting reversible assignment."
 
 pReversibleOp :: Parser ReversibleOp
 pReversibleOp = choice [ AddR <$ symbol "+", SubR <$ symbol "-", XorR <$ symbol "^"]
+                    <?> "Expecting reversible operator."
 
 
 -- Pattern parsers
@@ -127,7 +125,7 @@ pPattern = choice [ pInvolute
                   , PVar <$> variable
                   , PConst <$> constant
                   , pair pPattern PPair
-                  ]
+                  ] <?> "Expecting pattern."
 -- Expression parsers
 
 
@@ -219,12 +217,12 @@ constant = symbol "'" *> constant'
 
 
 pair :: Parser el -> (el -> el -> a) -> Parser a
-pair p f = do symbol "("
-              el1 <- p
-              symbol "."
-              el2 <-  p
-              symbol ")"
-              return $ f el1 el2
+pair p f = (do symbol "("
+               el1 <- p
+               symbol "."
+               el2 <-  p
+               symbol ")"
+               return $ f el1 el2) <?> "Expecting pair."
 
 atom :: Parser Atom
 atom = lexeme $
@@ -240,16 +238,16 @@ integer :: Parser Int
 integer = read <$> (lexeme $ many1 digit)
 
 keyword :: String -> Parser ()
-keyword s = lexeme ( do string s; notFollowedBy alphaNum )
+keyword s = lexeme . try $ string s *> notFollowedBy alphaNum
 
 identifier :: Parser Identifier
-identifier = lexeme $
+identifier = lexeme . try $
                 do c <- letter
                    cs <- many alphaNum
                    if (c:cs) `elem` keywords then fail "keyword used as identifier" else return (c:cs)
 
 variable :: Parser Variable
-variable = lexeme $
+variable =  lexeme. try $
                 do c <- letter
                    cs <- many alphaNum
                    if (c:cs) `elem` keywords then fail "keyword used as variable" else return (c:cs)

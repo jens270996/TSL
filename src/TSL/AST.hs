@@ -7,18 +7,10 @@ data Program = Program Involution [Involution] [Procedure]
     deriving (Eq, Show, Read)
 
 
-data Involution = Involution Identifier Pattern [Statement] SymmetricStatement
+data Involution = Involution Identifier Pattern [Statement]
     deriving (Eq, Show, Read)
 
 data Procedure = Procedure Identifier Pattern [Statement] Pattern
-    deriving (Eq, Show, Read)
-
-
-
-data SymmetricStatement =
-    XorAssign Variable Expression
-    | SReplacement Pattern Pattern
-    | SSkip
     deriving (Eq, Show, Read)
 
 data Statement =
