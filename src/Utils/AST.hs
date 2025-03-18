@@ -10,7 +10,7 @@ getMain :: Program -> Involution
 getMain (Program m _ _ ) = m
 
 involutions :: Program -> [Involution]
-involutions (Program _ is _) = is
+involutions (Program main is _) = main:is
 
 procedures :: Program -> [Procedure]
 procedures (Program _ _ ps) = ps
