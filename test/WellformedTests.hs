@@ -29,13 +29,37 @@ tests =
 programTests:: TestTree
 programTests =
     testGroup "Program tests"
-        [
-            -- non unique ids
-            -- main is not an involution
-            -- call on involution
+        [ programPositiveTest "unique ids"
+            (Program
+                (Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])
+                [(Involution "i2" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])]
+                [(Procedure "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))] (PVar "x"))])
+        , programNegativeTest "non-unique ids (main)"
+                (Program
+                    (Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])
+                    [(Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])]
+                    [(Procedure "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))] (PVar "x"))])
+        , programNegativeTest "non-unique ids (procedure & involution)"
+                (Program
+                    (Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])
+                    [(Involution "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])]
+                    [(Procedure "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))] (PVar "x"))])
+        , programNegativeTest "main is not an involution"
+                (Program
+                    (Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (Call "r1" (PVar "x"))))])
+                    [(Involution "i2" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])]
+                    [(Procedure "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))] (PVar "x"))])
+        , programNegativeTest "call on involution"
+                (Program
+                    (Involution "i1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])
+                    [(Involution "i2" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (PVar "x")))])]
+                    [(Procedure "r1" (PVar "x") [(Replacement (PPair (PVar "x") (PVar "y")) (PPair (PVar "y") (Call "i1" (PVar "x"))))] (PVar "x"))])
             -- involute on procedure
             
         ]
+        where
+            programPositiveTest = testPositive wellformedProgram
+            programNegativeTest = testNegative wellformedProgram
 
 symmetricStatementTests :: TestTree
 symmetricStatementTests =
