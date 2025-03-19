@@ -59,8 +59,6 @@ data Op =
     |Mult
     |Div
     |Mod
-    |BitwiseAnd
-    |BitwiseOr
     |And
     |Or
     |Gt
