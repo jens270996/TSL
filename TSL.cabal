@@ -67,6 +67,8 @@ library
         Interpretation.Interpreter
         Interpretation.Implementation.Interpreter
         Interpretation.Implementation.Computation
+        Inversion.Inverter
+        Inversion.Implementation.Inverter
         TSL.AST
         Utils.Error
         Utils.AST

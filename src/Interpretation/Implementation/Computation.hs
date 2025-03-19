@@ -5,11 +5,14 @@ import TSL.AST
 import Utils.Error
 import Control.Monad
 import Utils.AST
+import System.Environment (getEnvironment, getEnv)
 
 type VariableStore = Map.Map Variable Constant
 type ProcedureStore = Map.Map Identifier Procedure
 type InvolutionStore = Map.Map Identifier Involution
 
+emptyVariableStore :: VariableStore
+emptyVariableStore = Map.empty
 constructInitialStores :: Program -> (ProcedureStore,InvolutionStore)
 constructInitialStores p =
     let involutionStore = Map.fromList ( zip  (involutionIds p) (involutions p))
@@ -80,6 +83,14 @@ overrideC var c = Computation (\(_,_) vars -> case c of
 throwC :: String -> Computation ()
 throwC e = Computation (\(_,_) _ -> Left e)
 
+assertEnvironmentEmptyC :: Computation ()
+assertEnvironmentEmptyC = Computation (\_ vars -> if vars == Map.empty then Right ((),vars) else Left "Environment must be empty at return from function.")
+
+getEnvironmentC :: Computation VariableStore
+getEnvironmentC = Computation (\_ vars -> Right (vars,vars))
+
+withEnvironmentC :: VariableStore -> Computation ()
+withEnvironmentC vars = Computation (\_ _ -> Right ((),vars))
 
 -- The class of monads that support the core RWS operations
 class Monad cm => ComputationMonad cm where
@@ -98,6 +109,10 @@ class Monad cm => ComputationMonad cm where
   getProcedure :: Identifier -> cm Procedure
   -- Get involution by its identifier
   getInvolution :: Identifier -> cm Involution
+  getEnvironment :: cm VariableStore
+  withEnvironment :: VariableStore -> cm ()
+  assertEnvironmentEmpty :: cm ()
+
   -- Throw an error
   throw :: String -> cm ()
 
@@ -109,4 +124,7 @@ instance ComputationMonad Computation where
     getProcedure = getProcedureC
     getInvolution = getInvolutionC
     throw = throwC
+    withEnvironment = withEnvironmentC
+    getEnvironment = getEnvironmentC
+    assertEnvironmentEmpty = assertEnvironmentEmptyC
     override = overrideC
