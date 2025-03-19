@@ -2,10 +2,8 @@ module Utils.AST where
 
 import TSL.AST
 import Data.List (nub, length)
--- Input: Program
--- Output: (Involution Identifiers, Procedure Identifiers)
 
-
+-- getters for sub structures.
 getMain :: Program -> Involution
 getMain (Program m _ _ ) = m
 
@@ -16,13 +14,17 @@ procedures :: Program -> [Procedure]
 procedures (Program _ _ ps) = ps
 
 
-
-identifiers:: Program -> ([Identifier],[Identifier])
-identifiers (Program main involutions procedures) =
+-- Input: Program
+-- Output: (Involution Identifiers, Procedure Identifiers)
+involutionIds:: Program -> [Identifier]
+involutionIds (Program main involutions _) =
     let involutionIds = map (\(Involution id _ _ )-> id) involutions
-        procedureIds = map (\(Procedure id _ _ _)-> id) procedures
         (Involution mainId _ _) = main
-    in ((mainId : involutionIds), procedureIds)
+    in (mainId : involutionIds)
+
+procedureIds :: Program -> [Identifier]
+procedureIds (Program _ _ procedures) =
+    map (\(Procedure id _ _ _)-> id) procedures
 
 statements:: Program -> [Statement]
 statements (Program main involutions procedures) =

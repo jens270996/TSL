@@ -1,5 +1,5 @@
 module Wellformedness.Implementation.Wellformed where
-import Utils.AST (identifiers,statements,variablesPattern,patterns, variablesExpression, unique, involutions)
+import Utils.AST (statements,variablesPattern,patterns, variablesExpression, unique, involutions, procedureIds, involutionIds)
 import Control.Applicative ((<|>))
 import Utils.Error (Error)
 import TSL.AST
@@ -9,10 +9,11 @@ type Wellformed = Maybe Error
 
 wellformedProgram :: Program -> Wellformed
 wellformedProgram p =
-    let (involutionIds,procedureIds) = identifiers p
+    let pIds = procedureIds p
+        iIds = involutionIds p
     -- TODO: consider order
-    in (foldl (<|>) Nothing $ map (wellformedPattern involutionIds procedureIds) (patterns p))
-        <|> (if unique (involutionIds++procedureIds) then Nothing else Just "Multiple declarations of Involution/Procedure with same name.")
+    in (foldl (<|>) Nothing $ map (wellformedPattern iIds pIds) (patterns p))
+        <|> (if unique (iIds++pIds) then Nothing else Just "Multiple declarations of Involution/Procedure with same name.")
         <|> (foldl (<|>) Nothing $ map (wellformedStatement ) (statements p))
         <|> (foldl (<|>) Nothing $ map (wellformedInvolution ) (involutions p))
 
