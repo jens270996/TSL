@@ -16,7 +16,10 @@ parseString p s = case parse (p <* eof) "" s of
 
 
 parseProgram:: String -> ErrorMonad Program
-parseProgram s = parseString (whitespace *> pProgram) s
+parseProgram = parseString (whitespace *> pProgram)
+
+parseInput:: String -> ErrorMonad Constant
+parseInput = parseString (whitespace *> constant)
 
 pProgram :: Parser Program
 pProgram = do main <- pInvolution
@@ -42,27 +45,6 @@ pProcedure = do keyword "procedure"
                 body <- manyTill pStatement (keyword "return")
                 output <- pPattern
                 return $ Procedure name input body output
-
-
--- Symmetric statement parsers
--- pSymmetricStatement :: Parser SymmetricStatement
--- pSymmetricStatement = choice [SSkip <$ keyword "skip", pXorAssignment, pSReplacement]
-
--- pXorAssignment :: Parser SymmetricStatement
--- pXorAssignment =
---     do var <- variable
---        symbol "^"
---        symbol "="
---        exp <- pExpression
---        return $ XorAssign var exp
-
--- pSReplacement :: Parser SymmetricStatement
--- pSReplacement =
---     do p1 <- pPattern
---        symbol "<-"
---        p2 <- pPattern
---        return $ SReplacement p1 p2
-
 
 -- Reversible statement parsers
 
@@ -170,7 +152,7 @@ pExpression4 = (Constant <$> constant) <|> (EVar <$> variable) <|> inParentheses
 
 pOperator :: Parser Op -> Parser (Expression -> Expression -> Expression)
 pOperator p = do op <- p 
-                 return (\e1 e2 -> Operation op e1 e2)
+                 return $ Operation op
 
 
 operator0 :: Parser Op
@@ -235,7 +217,7 @@ symbol :: String -> Parser ()
 symbol s = void . lexeme $ string s
 
 integer :: Parser Int
-integer = read <$> (lexeme $ many1 digit)
+integer = read <$> lexeme (many1 digit)
 
 keyword :: String -> Parser ()
 keyword s = lexeme . try $ string s *> notFollowedBy alphaNum

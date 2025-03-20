@@ -1,11 +1,12 @@
 module Main where
 
-import Parsing.Parser (parseProgram)
+import Parsing.Parser (parseProgram,parseInput)
 import Utils.Error (ErrorMonad)
 
 import Control.Monad
 import Options.Applicative
 import System.Exit (die)
+import Interpretation.Interpreter
 
 data Options = Interpret InterpretOptions
 
@@ -51,15 +52,17 @@ main = do
 interpretMain:: InterpretOptions -> IO()
 interpretMain InterpretOptions { programFile=programPath, inputFile=inputPath, verbose=v} =
   do program <- parseFile v parseProgram programPath
-     print program
-
+     trace v $ "Program: \n" ++ show program
+     input <- parseFile v parseInput inputPath
+     trace v $ "Input: \n" ++ show input
+     (case interpretProgram program input of Right c -> print c; Left e -> print $ "Error: " ++ e)
 
 
 parseFile :: Bool -> (String -> ErrorMonad a) -> String ->  IO a
-parseFile verbose parser file =
-  do trace verbose $ "- Reading program from file: " ++ show file
+parseFile v parser file =
+  do trace v $ "- Reading input from file: " ++ show file
      input <- readFile file
-     trace verbose "- Parsing input"
+     trace v "- Parsing input"
      fromErrorMonad "parsing" $ parser input
 
 

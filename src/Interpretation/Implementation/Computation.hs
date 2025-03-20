@@ -5,7 +5,6 @@ import TSL.AST
 import Utils.Error
 import Control.Monad
 import Utils.AST
-import System.Environment (getEnvironment, getEnv)
 
 type VariableStore = Map.Map Variable Constant
 type ProcedureStore = Map.Map Identifier Procedure

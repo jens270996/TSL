@@ -3,10 +3,25 @@ module Interpretation.Implementation.Interpreter where
 import TSL.AST
 import Inversion.Inverter (invertStatements)
 import Interpretation.Implementation.Computation
+import Utils.Error (ErrorMonad)
 
-interpretProgram :: Program -> Constant -> Constant
-interpretProgram program input = undefined
+interpretProgram :: Program -> Constant -> ErrorMonad Constant
+interpretProgram p input =
+    let functionStore = constructInitialStores p
+        variableStore = emptyVariableStore
+    in case runComputation (interpretMain p input) functionStore variableStore of
+        Right (c, m) | m == emptyVariableStore -> Right c
+        Right (_,_) -> Left "Non nil variables in environment after executing main."
+        Left e -> Left e
 
+
+
+interpretMain :: Program -> Constant -> Computation Constant
+interpretMain (Program main _ _) c =
+    let (Involution _id pIn _stmts) = main
+    in do deconstruct pIn c
+          interpretInvolution main
+          construct pIn
 
 
 interpretInvolution :: Involution -> Computation ()
