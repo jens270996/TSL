@@ -1,2 +1,2 @@
-involution main (x.y)
+involution swap (x.y)
     (y.x) <- (x.y)

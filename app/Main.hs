@@ -51,11 +51,16 @@ main = do
 
 interpretMain:: InterpretOptions -> IO()
 interpretMain InterpretOptions { programFile=programPath, inputFile=inputPath, verbose=v} =
-  do program <- parseFile v parseProgram programPath
+  do trace v "\n" 
+     program <- parseFile v parseProgram programPath
+     trace v "\n\n\n"
      trace v $ "Program: \n" ++ show program
+     trace v "\n"
      input <- parseFile v parseInput inputPath
-     trace v $ "Input: \n" ++ show input
-     (case interpretProgram program input of Right c -> print c; Left e -> print $ "Error: " ++ e)
+     trace v "\n"
+     trace v $ "Input: " ++ show input
+     trace v "\n"
+     (case interpretProgram program input of Right c -> putStrLn $ "Output: " ++ show c; Left e -> print $ "Error: " ++ e)
 
 
 parseFile :: Bool -> (String -> ErrorMonad a) -> String ->  IO a

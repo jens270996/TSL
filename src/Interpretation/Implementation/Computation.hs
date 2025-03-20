@@ -9,10 +9,10 @@ import Utils.AST
 type VariableStore = Map.Map Variable Constant
 type ProcedureStore = Map.Map Identifier Procedure
 type InvolutionStore = Map.Map Identifier Involution
-
+type FunctionStore = (ProcedureStore,InvolutionStore)
 emptyVariableStore :: VariableStore
 emptyVariableStore = Map.empty
-constructInitialStores :: Program -> (ProcedureStore,InvolutionStore)
+constructInitialStores :: Program -> FunctionStore
 constructInitialStores p =
     let involutionStore = Map.fromList ( zip  (involutionIds p) (involutions p))
         procedureStore = Map.fromList  (zip (procedureIds p) (procedures p))
@@ -22,7 +22,7 @@ constructInitialStores p =
 
 newtype Computation a = Computation
     { runComputation ::
-        (ProcedureStore,InvolutionStore) ->
+        FunctionStore ->
         VariableStore ->
         ErrorMonad (a,VariableStore)
     }

@@ -20,10 +20,10 @@ tests =
         , constantTests
         , patternTests
         , statementTests
-        --, symmetricStatementTests
         , procedureTests
         , involutionTests
         , programTests
+        , whitespaceTests
         ]
 
 programTests :: TestTree
@@ -135,3 +135,15 @@ constantTests = testGroup "Constant tests"
     where
      parseConstant = parseSuccessfully constant
      parseConstantFail = parseFail constant
+
+whitespaceTests :: TestTree
+whitespaceTests =
+    testGroup "Whitespace tests"
+    [ parseSuccessfully (keyword  "symbol") "whitespace after symbol" "symbol  " ()
+    , parseSuccessfully (keyword  "symbol") "newline after symbol" "symbol    \n" ()
+    , parseSuccessfully (keyword  "symbol") "comment after symbol" "symbol  // safasf asfasfasf asf \n" ()
+    , parseFail (keyword  "symbol") "line break ends comment" "symbol  // safasf asfasfasf asf \n asdasdasddasd"
+    , parseSuccessfully (keyword  "symbol") "spaces after newline" "symbol    \n        " ()
+    , parseSuccessfully (keyword  "symbol") "comment after newline" "symbol    \n    // bla blab bal    " ()
+    , parseSuccessfully (keyword  "symbol") "multiple comments" "symbol // bla blab bal    \n    // bla blab bal \n // bla blab bal     " ()
+    ]

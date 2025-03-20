@@ -1,7 +1,7 @@
 module Utils.AST where
 
 import TSL.AST
-import Data.List (nub, length)
+import Data.List (nub)
 
 -- getters for sub structures.
 getMain :: Program -> Involution

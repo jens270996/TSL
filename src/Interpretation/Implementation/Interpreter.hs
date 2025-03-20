@@ -5,6 +5,7 @@ import Inversion.Inverter (invertStatements)
 import Interpretation.Implementation.Computation
 import Utils.Error (ErrorMonad)
 
+type Interpreter a b = a -> Computation b 
 interpretProgram :: Program -> Constant -> ErrorMonad Constant
 interpretProgram p input =
     let functionStore = constructInitialStores p

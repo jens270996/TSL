@@ -1,0 +1,4 @@
+// input x = 'true | 'nil
+// output inverted x
+involution toggle x
+    x ^= 'true

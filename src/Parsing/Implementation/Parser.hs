@@ -8,7 +8,7 @@ import Utils.Error (ErrorMonad)
 import Control.Monad (void)
 import Data.Either (lefts, rights)
 type Parser = Parsec String ()
-
+type Function = Either Involution Procedure
 parseString :: Parser a -> String -> ErrorMonad a
 parseString p s = case parse (p <* eof) "" s of
                     Right a -> return a
@@ -17,7 +17,6 @@ parseString p s = case parse (p <* eof) "" s of
 
 parseProgram:: String -> ErrorMonad Program
 parseProgram = parseString (whitespace *> pProgram)
-
 parseInput:: String -> ErrorMonad Constant
 parseInput = parseString (whitespace *> constant)
 

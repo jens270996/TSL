@@ -1,0 +1,25 @@
+procedure lex (x.y)
+    if x == 'nil || y == 'nil
+    then order ^= 'equal
+    else
+        (headX.tailX) <- x
+        (headY.tailY) <- y
+        if headX == headY 
+        then
+            (order.(tailX.tailY)) <- call lex (tailX.tailY)
+        else
+            (order.(headX.headY)) <- call lexToken (headX.headY)
+        fi headX == headY
+        x <- (headX.tailX)
+        y <- (headY.tailY)
+    fi x == 'nil || y == 'nil
+    return (order.(x.y))
+    
+procedure lexToken (x.y)
+    if x { y
+    then order ^= 'less
+    else order ^= 'greater
+    fi order == 'less
+    return (order.(x.y))
+
+
