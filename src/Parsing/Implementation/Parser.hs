@@ -129,17 +129,17 @@ pUncall = do keyword "uncall"
              return $ Uncall name pat
 
 pExpression :: Parser Expression
-pExpression = do exp1 <- pExpression1
-                 option exp1
-                    (do
-                        op <- operator0
-                        exp2 <- pExpression1
-                        return $ Operation op exp1 exp2
-                    )
+pExpression = pExpression1 `chainl1` operator0
 
 pExpression1 :: Parser Expression
-pExpression1 = pExpression2 `chainl1` operator1
-
+pExpression1 =
+    do exp1 <- pExpression2
+       option exp1
+        (do
+            op <- operator1
+            exp2 <- pExpression2
+            return $ Operation op exp1 exp2
+        )
 pExpression2 :: Parser Expression
 pExpression2 = pExpression3 `chainl1` operator2
 
@@ -153,21 +153,17 @@ pOperator :: Parser Op -> Parser (Expression -> Expression -> Expression)
 pOperator p = do op <- p 
                  return $ Operation op
 
-
-
-operator0 :: Parser Op
-operator0 = choice [ And <$ symbol "&&"
-                    , Or <$ symbol "||"
-                    , Xor <$ symbol "^"]
-operator1 :: Parser (Expression -> Expression -> Expression)
-operator1 =
-    let p = choice [ Gt <$ symbol ">"
+operator0 :: Parser (Expression -> Expression -> Expression)
+operator0 = pOperator $ choice [ And <$ symbol "&&"
+                               , Or <$ symbol "||"
+                               , Xor <$ symbol "^"]
+operator1 :: Parser Op
+operator1 = choice [ Gt <$ symbol ">"
                    , Lt <$ symbol "<"
                    , Eq <$ symbol "="
                    , Neq <$ symbol "!="
                    , GtEq <$ symbol ">="
                    , LtEq <$ symbol "<="]
-    in pOperator p
 
 
 operator2 :: Parser (Expression -> Expression -> Expression)
