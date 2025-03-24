@@ -154,20 +154,21 @@ pOperator p = do op <- p
                  return $ Operation op
 
 
-operator0 :: Parser Op
-operator0 = choice [ Gt <$ symbol ">"
-                    , Lt <$ symbol "<"
-                    , Eq <$ symbol "="
-                    , Neq <$ symbol "!="
-                    , GtEq <$ symbol ">="
-                    , LtEq <$ symbol "<="]
 
-operator1 :: Parser (Expression -> Expression -> Expression)
-operator1 =
-    let  p = choice [ And <$ symbol "&&"
+operator0 :: Parser Op
+operator0 = choice [ And <$ symbol "&&"
                     , Or <$ symbol "||"
                     , Xor <$ symbol "^"]
+operator1 :: Parser (Expression -> Expression -> Expression)
+operator1 =
+    let p = choice [ Gt <$ symbol ">"
+                   , Lt <$ symbol "<"
+                   , Eq <$ symbol "="
+                   , Neq <$ symbol "!="
+                   , GtEq <$ symbol ">="
+                   , LtEq <$ symbol "<="]
     in pOperator p
+
 
 operator2 :: Parser (Expression -> Expression -> Expression)
 operator2 =
@@ -230,8 +231,11 @@ identifier = lexeme . try $
 variable :: Parser Variable
 variable =  lexeme. try $
                 do c <- letter
-                   cs <- many alphaNum
+                   cs <- many pChar
                    if (c:cs) `elem` keywords then fail "keyword used as variable" else return (c:cs)
+
+pChar :: Parser Char
+pChar = choice [alphaNum, char '_', char '\'']
 
 inParentheses :: Parser a -> Parser a
 inParentheses = between (symbol "(") (symbol ")")

@@ -54,7 +54,7 @@ interpretStatement (Conditional e1 s1 s2 e2) =
        c2 <- interpretExpression e2
        if bool c1 == bool c2
         then return ()
-        else throw $ "Assertion in conditional failed. Expected " ++ show (bool c1) ++ " but was " ++ show (bool c2)
+        else throw $ "Assertion in conditional failed. Expected " ++ show (bool c1) ++ " but was " ++ show (bool c2) ++ " condition 2: " ++ show e2
 interpretStatement (Replacement p1 p2) =
     do c <- construct p2
        deconstruct p1 c
@@ -112,7 +112,7 @@ construct (Uncall name p) =
 deconstruct :: Pattern -> Constant -> Computation ()
 deconstruct (PVar var) c = set var c
 deconstruct (PPair p1 p2) (CPair c1 c2) = deconstruct p1 c1 >> deconstruct p2 c2
-deconstruct (PPair _ _) _ = throw $ "attempting to deconstruct non-pair constant into pattern pair."
+deconstruct (PPair p1 p2) c = throw $ "attempting to deconstruct non-pair constant into pattern pair: (" ++ show p1 ++ "." ++ show p2 ++ ") <- " ++ show c
 deconstruct (PConst c) c1 | c == c1 = return ()
 deconstruct (PConst c) c1 = throw $ "Deconstruction of constant " ++ show c1 ++ " into " ++ show c ++ " is invalid since they are not equal"
 deconstruct (Involute name p) c =

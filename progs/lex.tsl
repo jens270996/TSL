@@ -1,25 +1,48 @@
-procedure lex (x.y)
-    if x == 'nil || y == 'nil
+involution involutize (dir.(order.(xs.ys)))
+    if dir = 'true
+    then (order.(xs.ys)) <- call lex (xs.ys)
+    else skip
+    fi dir = 'true
+    dir ^= 'true
+
+// Lexicographic ordering of two Turing machine tapes with symbols 0,1, blank
+procedure lex (xs.ys)
+    if xs = 'nil && ys = 'nil
     then order ^= 'equal
+    else if xs = 'nil
+    then order ^= 'less
+    else if ys = 'nil
+    then order ^= 'greater
     else
-        (headX.tailX) <- x
-        (headY.tailY) <- y
-        if headX == headY 
+        (x.xs) <- xs
+        (y.ys) <- ys
+        if x = y
         then
-            (order.(tailX.tailY)) <- call lex (tailX.tailY)
+            (order.(xs.ys)) <- call lex (xs.ys)
         else
-            (order.(headX.headY)) <- call lexToken (headX.headY)
-        fi headX == headY
-        x <- (headX.tailX)
-        y <- (headY.tailY)
-    fi x == 'nil || y == 'nil
-    return (order.(x.y))
+            (order.(x.y)) <- call lexToken (x.y)
+        fi x = y
+        xs <- (x.xs)
+        ys <- (y.ys)
+    
+        fi ys = 'nil
+        fi xs = 'nil
+    fi xs = 'nil && ys = 'nil
+    return (order.(xs.ys))
+    
     
 procedure lexToken (x.y)
-    if x { y
+    if x = 'blank
     then order ^= 'less
-    else order ^= 'greater
-    fi order == 'less
+    else if y = 'blank
+         then order ^= 'greater
+         else if x < y
+              then order ^= 'less
+              else order ^= 'greater
+              fi x < y
+         fi y = 'blank
+    fi x = 'blank
+
     return (order.(x.y))
 
 

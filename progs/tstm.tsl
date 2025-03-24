@@ -1,0 +1,23 @@
+// (Start.(End.(Rules.S_right))) -> (Start.(End.(Rules.S_right)))
+involution TSTM (Start.(End.(Rules.S_right)))
+    S_right' ^= S_right
+    (Start.(End.(Rules.S_right'))) <- call RTM (Start.(End.(Rules.S_right')))
+    (order.(S_right.S_right')) <- call lex (S_right.S_right')
+
+    if order = 'less
+    then (Start.(End.(Rules.S_right))) <- call RTM (Start.(End.(Rules.S_right)))
+    else skip
+    fi order = 'less
+
+    order <- involute toggleOrder order
+
+
+involution toggleOrder order
+    if order = 'less
+    then
+        order ^= 'less
+        order ^= 'greater
+    else skip
+    fi order = 'greater
+
+    order <- order

@@ -83,7 +83,7 @@ throwC :: String -> Computation ()
 throwC e = Computation (\(_,_) _ -> Left e)
 
 assertEnvironmentEmptyC :: Computation ()
-assertEnvironmentEmptyC = Computation (\_ vars -> if vars == Map.empty then Right ((),vars) else Left "Environment must be empty at return from function.")
+assertEnvironmentEmptyC = Computation (\_ vars -> if vars == Map.empty then Right ((),vars) else Left $ "Environment must be empty at return from function. Non-empty vars: " ++ (show vars))
 
 getEnvironmentC :: Computation VariableStore
 getEnvironmentC = Computation (\_ vars -> Right (vars,vars))
