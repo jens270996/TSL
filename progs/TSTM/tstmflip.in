@@ -1,11 +1,10 @@
-//  (Dir.Args)
-// Args = (Start.(End.(Rules.S_right)))
+//  (Start.(End.(Rules.S_right)))
 
-'(true.(start.(end.(
+'(start.(end.(
 ((start.(move.(right.q1))).
 ((q1.(1.(0.q2))).
 ((q1.(0.(1.q2))).
 ((q2.(move.(left.end))).
 nil)))).
 (1.(0.(1.nil))) //tape
-))))
+)))
