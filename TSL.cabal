@@ -69,6 +69,8 @@ library
         Interpretation.Implementation.Computation
         Inversion.Inverter
         Inversion.Implementation.Inverter
+        ASTPrinting.Implementation.Printer
+        ASTPrinting.Printer
         TSL.AST
         Utils.Error
         Utils.AST

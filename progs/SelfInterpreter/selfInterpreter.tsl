@@ -1,0 +1,4 @@
+
+involution selfInterpreter (Program.Input)
+    ('program.(main . (invols . procs))) <- Program
+    
