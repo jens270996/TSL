@@ -1,4 +1,291 @@
 
 involution selfInterpreter (Program.Input)
-    ('program.(main . (invols . procs))) <- Program
-    
+    ('program.(Main . (Invols . Procs))) <- Program
+    ('involution. (Id. (P. Body))) <- Main
+    Table <- (Invols.Procs) //TODO: create map with ids as keys
+    Env <- call deconstruct (('nil.Table).(P.Input))
+    (Env.Body) <- involute interpretInvolutionBody (Env.Body)
+
+
+
+
+
+
+
+
+
+
+// ------------------------------- Interpreters ------------------------------------------------------------------------
+involution interpretInvolutionBody (Env.Body)
+
+
+
+
+procedure interpretStatement (Env.Statement)
+    (Stype.Statement) <- Statement
+    if Stype = 'assign then
+        (Op.(Var.E)) <- Statement
+        (Env.(E.V2)) <- call interpretExpression (Env.E)
+        (Env.(Var.V1)) <- uncall insertVar (Env.Var)
+        (Op.(V.V2)) <- call applyRevOp (Op.(V1.V2))
+        (Env.Var) <- call insertVar (Env.(Var.V))
+        (Env.E) <- uncall interpretExpression (Env.(E.V2))
+        Statement <- (Op.(Var.E))
+
+    else if Stype = 'loop then
+        (E1.(S1.(S2.E2))) <- Statement
+        (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        from B1
+        do
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S1) <- call interpretStatements (Env.S1)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        loop
+            (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+            (Env.S2) <- call interpretStatements (Env.S2)
+            (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        until B2
+        (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+        Statement <- (E1.(S1.(S2.E2)))
+
+    else if Stype = 'conditional then
+        (E1.(S1.(S2.E2))) <- Statement
+        (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        if B1 then
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S1) <- call interpretStatements (Env.S1)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        else
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S2) <- call interpretStatements (Env.S2)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        fi B2
+        (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+        Statement <- (E1.(S1.(S2.E2)))
+
+    else if Stype = 'replacement then
+        (P1.P2) <- Statement
+        (Env.(P1.V)) <- uncall deconstruct (Env.P1)
+        (Env.P2) <- call deconstruct (Env.(P2.V))
+        Statement <- (P1.P2)
+
+    else if Stype = 'skip then
+        skip
+    else skip //should not reach here!!
+    fi Stype = 'skip
+    fi Stype = 'replacement
+    fi Stype = 'conditional
+    fi Stype = 'loop
+    fi Stype = 'assign
+    Statement <- (Stype.Statement)
+
+    return (Env.Statement)
+
+
+involution interpretSymmetricStatement (Env. Statement)
+    Env' ^= Env
+    (Env. Statement) <- call interpretStatement (Env. Statement)
+    (Env.Env') <- (Env'.Env)
+
+procedure interpretExpression (Env.E)
+    (Etype.E) <- E
+    if Etype = 'constant
+        V^=E
+    else if Etype = 'variable
+        (Env.(E.V)) <- call lookVar (Env.E)
+    else if Etype = 'operation
+        (Op.(E1.E2)) <- E
+        (Env.(E1.V1)) <- call interpretExpression (Env.E1)
+        (Env.(E2.V2)) <- call interpretExpression (Env.E2)
+        ((Op.(V1.V))) <- call applyOp (Op.(V1.V2))
+        (Env.E1) <- uncall interpretExpression (Env.(E1.V1)) 
+        E <- (Op.(E1.E2))
+    else skip // Should never reach here
+    fi Etype = 'operation
+    fi Etype = 'variable
+    fi Etype = 'constant
+    return (Env.(E.V))
+
+
+
+
+
+
+
+// -------------------------------- Auxillary procedures -----------------------------------------------------------------
+
+procedure deconstruct (Env.(Pattern.Value))
+    (Ptype.Pvalue) <- Pattern
+    if Ptype = 'variable then
+       (Env.Pvalue) <- call insertVar (Env.(Pvalue.Value))
+    else if Ptype = 'constant && Pvalue = Value then skip
+    else if Ptype = 'pair &&  then
+        (P1.P2) <- Pvalue
+        ('pair.(C1.C2)) <- Value
+        (Env.P1) <- call deconstruct (Env.(P1.C1))
+        (Env.P2) <- call deconstruct (Env.(P2.C2))
+        Pvalue <- (P1.P2)
+    else if Ptype = 'involute then
+        (Id.P) <- Pvalue
+        (Env.(P.Input)) <- uncall deconstruct (Env.P) 
+        (Table.(Id.('involution. (Id'.(P'.Body))))) <- call lookInvol (Table.Id)
+        (Env.P') <- call deconstruct (Env.(P'.Input))
+        (Env.Body) <- involute interpretInvolutionBody (Env.Body)
+        (Env.(P'.Output)) <- uncall deconstruct (Env.P')
+        (Table.Id) <- uncall lookInvol (Table.(Id.('involution. (Id'.(P'.Body)))))
+        (Env.P) <- call deconstruct (Env.(P.Output))
+        Pvalue <- (Id.P)
+    else if Ptype = 'call then skip // TODO
+    else if Ptype = 'uncall then skip // TODO
+        //utilize reversibility here?
+    else Ptype ^= 'error //should never reach here
+    fi Ptype = 'uncall
+    fi Ptype = 'call
+    fi Ptype = 'involute
+    fi Ptype = 'pair
+    fi Ptype = 'constant
+    fi Ptype ='variable
+    Pattern <- (Ptype.Pvalue)
+    return (Env.Pattern)
+
+procedure applyOp (Op.(V1.V2))
+    if Op = 'Xor then
+    else if Op = 'Add then
+        V ^= V1 + V2
+    else if Op = 'Sub then
+        V ^= V1 - V2
+    else if Op = 'Mult then
+        V ^= V1 * V2
+    else if Op = 'Div then
+        V ^= V1 / V2
+    else if Op = 'Mod then
+        V ^= V1 % V2
+    else if Op = 'And then
+        V ^= V1 && V2
+    else if Op = 'Or then
+        V ^= V1 || V2
+    else if Op = 'Gt then
+        V ^= V1 > V2
+    else if Op = 'Eq then
+        V ^= V1 = V2
+    else if Op = 'Lt then
+        V ^= V1 < V2
+    else if Op = 'GtEq then
+        V ^= V1 >= V2
+    else if Op = 'LtEq then
+        V ^= V1 <= V2
+    else if Op = 'Neq then
+        V ^= V1 != V2
+    else skip // Should never reach here
+    fi Op = 'Neq
+    fi Op = 'LtEq
+    fi Op = 'GtEq
+    fi Op = 'Lt
+    fi Op = 'Eq
+    fi Op = 'Gt
+    fi Op = 'Or
+    fi Op = 'And
+    fi Op = 'Mod
+    fi Op = 'Div
+    fi Op = 'Mult
+    fi Op = 'Sub
+    fi Op = 'Add
+    fi Op = 'Xor
+    return (Op.(V1.(V2.V)))
+
+// ----------------------------------------- Environment auxillary functions -----------------------------------------------
+// Environment = (Table.Store)
+// Table = (Invols.Procs)
+// Store = Map Var Value
+// Invols = Map Id involution
+// Procs = Map Id procedure
+
+procedure lookVar ((Table.Store).Var)
+    (Store.KVPair) <- look (Store.Var)
+    return ((Table.Store).KVPair)
+
+procedure insertVar ((Table.Store).KVPair)
+    (Store.KVPair) <- insert (Store.KVPair)
+    return ((Table.Store).KVPair)
+
+procedure lookInvol (((Invols.Procs).Store).Id)
+    (Invols.KVPair) <- look (Invols.Id)
+    return (((Invols.Procs).Store).KVPair)
+
+procedure lookProc (((Invols.Procs).Store).Id)
+    (Procs.KVPair) <- look (Procs.Id)
+    return (((Invols.Procs).Store).KVPair)
+
+
+
+
+
+// ----------------------------------------- Map functions ----------------------------------------------------------------
+
+procedure look (Map.Key)
+    (Map.(Key.Value)) <- uncall insert (Map.Key)
+    Value' ^= Value
+    (Map.Key) <- call insert (Map.(Key.Value'))
+    return (Map.(Key.Value))
+
+//Assumes key is not already in map
+procedure insert (Map. (Key.Value))
+    //Maybe check here if key is already in (then value must be nil)
+    // Or enforce this invariant elsewhere?
+    // For instance if only using insert to modify map, then the invariant holds
+    // as we never insert with 'nil as value.
+    if Value = 'nil
+    then (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    else
+        if Map = 'nil
+        then Key' ^= Key
+            Map <- ((Key'.Value).'nil)
+            (Map.Length) <- call length Map
+        else ((Key'.Value').Map) <- Map
+            if Key' < Key then
+                (Map.Key) <- call insert (Map. (Key.Value))
+            else
+                Map <- ((Key'.Value').Map)
+                (Key'.Value') <- (Key.Value)
+                Key ^= Key'
+            fi Key' < Key
+            Map <- ((Key'.Value').Map)
+            (Map.Length) <- call length Map
+        fi Length = '1
+        Map <- uncall Length (Map.Length)
+        (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    fi IsIn = 'nil
+    (Map.Key) <- uncall isKey (IsIn.(Map.Key))
+    return (Map.Key)
+
+
+procedure isKey (Map.Key)
+    if Map = 'nil
+    then skip
+    else
+        ((Key'.Val').Map) <- Map
+        if Key' = Key
+        then In ^= 'true
+        else (In.(Map.Key)) <- call elem (Map.Key)
+        fi Key' = Key
+        Map <- ((Key'.Val').Map)
+    fi Map = 'nil
+    return (In.(Map.Key))
+
+// ------------------------------------- List operations -----------------------------------------------------------------
+
+
+procedure length List
+    (List.C) <- call countRec (List.'0)
+    return (List.C)
+
+procedure countRec (List.C)
+    if List = 'nil
+    then skip
+    else C+=1
+         (Head.Tail) <- List
+         (Tail.C) <- call countRec (Tail.C)
+         List <- (Head.Tail)
+    fi List = 'nil
+    return (List.C)
+
