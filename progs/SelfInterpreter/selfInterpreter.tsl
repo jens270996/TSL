@@ -3,7 +3,8 @@ involution selfInterpreter (Program.Input)
     ('program.(Main . (Invols . Procs))) <- Program
     ('invol. (Id. (P. Body))) <- Main
     Table <- call createTable (Invols.Procs) 
-    Env <- call deconstruct (('nil.Table).(P.Input))
+    (Env.P) <- call deconstruct ((Table.'nil).(P.Input))
+    Env <- call check Env
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
 
 
@@ -12,13 +13,14 @@ involution selfInterpreter (Program.Input)
 
 
 
-
+procedure check E
+ return E
 
 
 // ------------------------------- Interpreters ------------------------------------------------------------------------
 involution interpretInvolutionBody (Env.Body)
     (Init.Last) <- call unsnoc Body
-    (Env.Init) <- call interpretStatements Init
+    (Env.Init) <- call interpretStatements (Env.Init)
     (Env.Last) <- involute interpretSymmetricStatement (Env.Last)
 
 
@@ -299,7 +301,7 @@ procedure insert (Map. (Key.Value))
         then Key' ^= Key
             Map <- ((Key'.Value).'nil)
             (Map.Length) <- call length Map
-        else ((Key'.Value').Map) <- Map
+        else ((Key'.Value').Map) <- Map //Error here!!!!
             if Key' < Key then
                 (Map.Key) <- call insert (Map. (Key.Value))
             else
@@ -310,7 +312,7 @@ procedure insert (Map. (Key.Value))
             Map <- ((Key'.Value').Map)
             (Map.Length) <- call length Map
         fi Length = '1
-        Map <- uncall Length (Map.Length)
+        Map <- uncall length (Map.Length)
         (IsIn.(Map.Key)) <- call isKey (Map.Key)
     fi IsIn = 'nil
     (Map.Key) <- uncall isKey (IsIn.(Map.Key))
@@ -324,7 +326,7 @@ procedure isKey (Map.Key)
         ((Key'.Val').Map) <- Map
         if Key' = Key
         then In ^= 'true
-        else (In.(Map.Key)) <- call elem (Map.Key)
+        else (In.(Map.Key)) <- call isKey (Map.Key)
         fi Key' = Key
         Map <- ((Key'.Val').Map)
     fi Map = 'nil

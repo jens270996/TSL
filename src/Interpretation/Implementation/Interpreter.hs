@@ -10,9 +10,9 @@ interpretProgram :: Program -> Constant -> ErrorMonad Constant
 interpretProgram p input =
     let functionStore = constructInitialStores p
         variableStore = emptyVariableStore
-    in case runComputation (interpretMain p input) functionStore variableStore of
-        Right (c, m) | m == emptyVariableStore -> Right c
-        Right (_,_) -> Left "Non nil variables in environment after executing main."
+    in case runComputation (interpretMain p input) [] functionStore variableStore of
+        Right (c, m,_) | m == emptyVariableStore -> Right c
+        Right (_,_,_) -> Left "Non nil variables in environment after executing main."
         Left e -> Left e
 
 
@@ -77,6 +77,7 @@ construct (PPair p1 p2) =
 construct (PConst c) = return c
 construct (Involute name p) =
     do c1 <- construct p
+       trace $ "RHS involute: " ++ name ++ show p ++ "=" ++ show c1
        involution <- getInvolution name
        Involution _ pIn _ <- getInvolution name
        oldEnv <- getEnvironment
@@ -89,23 +90,27 @@ construct (Involute name p) =
        return c
 construct (Call name p) =
     do c1 <- construct p
+       trace $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c1
        (Procedure _ pIn s pOut) <- getProcedure name
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
        deconstruct pIn c1
        interpretStatements s
        c <- construct pOut
+       trace $ "return from RHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ show c
        assertEnvironmentEmpty
        withEnvironment oldEnv
        return c
 construct (Uncall name p) =
     do c1 <- construct p
+       trace $ "RHS uncall: "++ name ++ " " ++ show p ++ "=" ++ show c1
        (Procedure _ pIn s pOut) <- getProcedure name
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
        deconstruct pOut c1
        reverseInterpretStatements s
        c <- construct pIn
+       trace $ "return from RHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ show c
        assertEnvironmentEmpty
        withEnvironment oldEnv
        return c
@@ -116,7 +121,8 @@ deconstruct (PPair p1 p2) c = throw $ "attempting to deconstruct non-pair consta
 deconstruct (PConst c) c1 | c == c1 = return ()
 deconstruct (PConst c) c1 = throw $ "Deconstruction of constant " ++ show c1 ++ " into " ++ show c ++ " is invalid since they are not equal"
 deconstruct (Involute name p) c =
-    do outerEnv <- getEnvironment
+    do trace $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ show c
+       outerEnv <- getEnvironment
        withEnvironment emptyVariableStore
        Involution _ pIn _ <- getInvolution name
        involution <- getInvolution name
@@ -130,6 +136,7 @@ deconstruct (Call name p) c =
     do outerEnv <- getEnvironment
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
+       trace $ "LHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ show c
        deconstruct pOut c
        reverseInterpretStatements s
        c' <- construct pIn
@@ -140,6 +147,7 @@ deconstruct (Uncall name p) c =
     do outerEnv <- getEnvironment
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
+       trace $ "LHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ show c
        deconstruct pIn c
        interpretStatements s
        c' <- construct pOut

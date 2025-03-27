@@ -28,7 +28,14 @@ data Pattern =
     | Involute Identifier Pattern
     | Call Identifier Pattern
     | Uncall Identifier Pattern
-    deriving (Eq, Show, Read)
+    deriving (Eq, Read)
+instance Show Pattern where
+    show (PVar var) = var
+    show (PPair p1 p2) = "(" ++ show p1 ++ "." ++ show p2 ++ ")"
+    show (PConst c) = "'"++ show c
+    show (Involute id p) = "involute " ++ id ++ " " ++ show p
+    show (Call id p) = "call " ++ id ++ " " ++ show p
+    show (Uncall id p) = "uncall " ++ id ++ " " ++ show p
 
 
 data Expression =
@@ -42,7 +49,12 @@ data Constant =
     | Atom Atom
     | Nil
     | CPair Constant Constant
-    deriving (Eq, Show, Read)
+    deriving (Eq, Read)
+instance Show Constant where
+    show (Integer i) = show i
+    show Nil = "nil"
+    show (CPair c1 c2) = "(" ++ show c1 ++ "." ++ show c2 ++ ")"
+    show (Atom a) = a
 
 
 data ReversibleOp =

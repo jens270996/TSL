@@ -84,7 +84,7 @@ interpretMain InterpretOptions { programFile=programPath, inputFile=inputPath, v
      trace v "\n"
      trace v $ "Input: " ++ show input
      trace v "\n"
-     (case interpretProgram program input of Right c -> putStrLn $ "Output: " ++ show c; Left e -> print $ "Error: " ++ e)
+     (case interpretProgram program input of Right c -> putStrLn $ "Output: " ++ show c; Left e -> putStr $ "Error: " ++ e)
 
 
 
