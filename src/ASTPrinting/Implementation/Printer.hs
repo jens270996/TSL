@@ -1,88 +1,133 @@
 module ASTPrinting.Implementation.Printer where
 
 import TSL.AST
-
-
+import ASTPrinting.Implementation.Counter
+import Data.Functor
 -- (program . (main . (invols . procs)))
 printProgram :: Program -> String
-printProgram (Program main invols procs) =
-    prepend "program" $
-        prepend (printInvol main) $
-        prepend (printInvols invols) (printProcs procs)
+printProgram p =
+    let (s,_,_) = runCounter (printProg p) emptyVariables 0
+    in s
+printProg :: Program -> Counter String
+printProg (Program main invols procs) =
+    do main' <- printInvol main
+       invols' <- printInvols invols
+       procs' <- printProcs procs
+       return $
+        prepend "program" $
+        prepend main' $
+        prepend invols' procs'
 
-printInvols :: [Involution] -> String
-printInvols = list . (map printInvol)
+printInvols :: [Involution] -> Counter String
+printInvols invols =
+    do invols' <- mapM printInvol invols
+       return $ list invols'
 
-printProcs :: [Procedure] -> String
-printProcs = list . (map printProc)
+printProcs :: [Procedure] -> Counter String
+printProcs procs =
+    do procs' <- mapM printProc procs
+       return $ list procs'
 
-printStmts :: [Statement] -> String
-printStmts = list . (map printStmt)
-    
-printInvol :: Involution -> String
+printStmts :: [Statement] -> Counter String
+printStmts stmts =
+    do stmts' <- mapM printStmt stmts
+       return $ list stmts'
+printInvol :: Involution -> Counter String
 printInvol (Involution id p stmts) =
-    prepend "invol" $
+    do p' <- printPattern p
+       stmts' <- printStmts stmts
+       return $
+        prepend "invol" $
         prepend id $
-        prepend (printPattern p) (printStmts stmts)
+        prepend p' stmts'
 
-printProc :: Procedure -> String
-printProc (Procedure id p stmts p') =
-    prepend "proc" $
+printProc :: Procedure -> Counter String
+printProc (Procedure id pIn stmts pOut) =
+    do pIn' <- printPattern pIn
+       pOut' <- printPattern pOut
+       stmts' <- printStmts stmts
+       return $
+        prepend "proc" $
         prepend id $
-        prepend (printPattern p) $
-        prepend (printStmts stmts) (printPattern p')
-    
-printStmt :: Statement -> String
+        prepend pIn' $
+        prepend stmts' pOut'
+
+printStmt :: Statement -> Counter String
 printStmt (Assign op var expr) =
-    prepend "assign" $
+    do v' <- getIdentifier var
+       expr' <- printExpr expr
+       return $
+        prepend "assign" $
         prepend (printRevOp op) $
-        prepend var (printExpr expr)
-printStmt (Loop e1 s1 s2 e2) =
-    prepend "loopS" $
-        prepend (printExpr e1) $
-        prepend (printStmts s1) $
-        prepend (printStmts s2) (printExpr e2)
-printStmt (Conditional e1 s1 s2 e2) =
-    prepend "conditional" $
-        prepend (printExpr e1) $
-        prepend (printStmts s1) $
-        prepend (printStmts s2) (printExpr e2)
-printStmt (Replacement p1 p2) =
-    prepend "replacement" $
-        prepend (printPattern p1) (printPattern p2)
-printStmt Skip = prepend "skipS" "nil"
+        prepend (show v') expr'
 
-printExpr :: Expression -> String
-printExpr (Constant c) = prepend "constant" (printConst c)
-printExpr (EVar v) = prepend "variable" v
+printStmt (Loop e1 s1 s2 e2) =
+    do e1' <- printExpr e1
+       s1' <- printStmts s1
+       s2' <- printStmts s2
+       e2' <- printExpr e2
+       return $
+        prepend "loopS" $
+        prepend e1' $
+        prepend s1' $
+        prepend s2' e2'
+printStmt (Conditional e1 s1 s2 e2) =
+    do e1' <- printExpr e1
+       s1' <- printStmts s1
+       s2' <- printStmts s2
+       e2' <- printExpr e2
+       return $
+        prepend "conditional" $
+        prepend e1' $
+        prepend s1' $
+        prepend s2' e2'
+printStmt (Replacement p1 p2) =
+    do p1' <- printPattern p1
+       p2' <- printPattern p2
+       return $
+        prepend "replacement" $
+        prepend p1' p2'
+printStmt Skip = return $ prepend "skipS" "nil"
+
+printExpr :: Expression -> Counter String
+printExpr (Constant c) = return $ prepend "constant" (printConst c)
+printExpr (EVar v) = do v' <- getIdentifier v
+                        return $ prepend "variable" (show v')
 printExpr (Operation op e1 e2) =
-    prepend "operation" $
+    do e1' <- printExpr e1
+       e2' <- printExpr e2
+       return $
+        prepend "operation" $
         prepend (printOp op) $
-        prepend (printExpr e1) (printExpr e2)
+        prepend e1' e2'
 
 printConst :: Constant -> String
 printConst (Integer i) = prepend "integer" (show i)
 printConst (Atom a) = prepend "atom" a
 printConst Nil = prepend "nil" "nil"
-printConst (CPair c1 c2) =
-    prepend "pair" $
-    prepend (printConst c1) (printConst c2)
+printConst (CPair c1 c2) = prepend "pair" $ prepend (printConst c1) (printConst c2)
 
-printPattern :: Pattern -> String
-printPattern (PVar v) = prepend "variable" v
+printPattern :: Pattern -> Counter String
+printPattern (PVar v) = do v' <- getIdentifier v
+                           return $ prepend "variable" (show v')
 printPattern (PPair p1 p2) =
-    prepend "pair" $
-        prepend (printPattern p1) (printPattern p2)
-printPattern (PConst c) = prepend "constant" (printConst c)
+    do s1 <- printPattern p1
+       s2 <- printPattern p2
+       return $ prepend "pair" $ prepend s1 s2
+
+printPattern (PConst c) = return $ prepend "constant" (printConst c)
 printPattern (Involute id p) =
-    prepend "involuteS" $
-        prepend id (printPattern p)
+    do s <- printPattern p
+       return $ prepend "involuteS" $
+                prepend id s
 printPattern (Call id p) =
-    prepend "callS" $
-        prepend id (printPattern p)
+    do s <- printPattern p
+       return $ prepend "callS" $
+                prepend id s
 printPattern (Uncall id p) =
-    prepend "uncallS" $
-        prepend id (printPattern p)
+    do s <- printPattern p
+       return $ prepend "uncallS" $
+                prepend id s
 
 printOp :: Op -> String
 printOp Xor = "Xor"

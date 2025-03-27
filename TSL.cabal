@@ -70,6 +70,7 @@ library
         Inversion.Inverter
         Inversion.Implementation.Inverter
         ASTPrinting.Implementation.Printer
+        ASTPrinting.Implementation.Counter
         ASTPrinting.Printer
         TSL.AST
         Utils.Error

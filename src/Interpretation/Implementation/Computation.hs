@@ -79,8 +79,13 @@ overrideC var c = Computation (\(_,_) vars -> case c of
                                             Nil -> Right ((), Map.delete var vars)
                                             _ -> Right ((),Map.insert var c vars))
 
+-- TODO: extend with env
 throwC :: String -> Computation ()
-throwC e = Computation (\(_,_) _ -> Left e)
+throwC e = Computation (\(_,_) varStore -> Left $ "Caught error: " ++ e ++ "\n" ++ "Environment contained: \n"++ printStore varStore)
+
+printStore :: VariableStore -> String
+printStore = show
+
 
 assertEnvironmentEmptyC :: Computation ()
 assertEnvironmentEmptyC = Computation (\_ vars -> if vars == Map.empty then Right ((),vars) else Left $ "Environment must be empty at return from function. Non-empty vars: " ++ (show vars))
