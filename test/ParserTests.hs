@@ -111,7 +111,8 @@ expressionTests :: TestTree
 expressionTests = testGroup "Expression tests"
     [ parseExpression "constant" "'hi" (Constant (Atom "hi") )
     , parseExpression "identifier" "var" (EVar "var")
-    , parseExpression "operation" "var * '2" (Operation Mult (EVar "var") (Constant (Integer 2))) 
+    , parseExpression "operation" "var * '2" (Operation Mult (EVar "var") (Constant (Integer 2)))
+    , parseExpression "operation >=" "var >= '2" (Operation GtEq (EVar "var") (Constant (Integer 2))) 
     , parseExpression "precedence * and +" "x + y * '2" (Operation Add (EVar "x") (Operation Mult (EVar "y") (Constant (Integer 2))))
     , parseExpression "precedence + and &&" "x + y && '2" (Operation And (Operation Add (EVar "x") (EVar "y")) (Constant (Integer 2)))
     , parseExpression "precedence && and =" "x && y = '2" (Operation And (EVar "x") (Operation Eq  (EVar "y") (Constant (Integer 2))))

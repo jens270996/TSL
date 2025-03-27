@@ -21,13 +21,13 @@ printStmts = list . (map printStmt)
     
 printInvol :: Involution -> String
 printInvol (Involution id p stmts) =
-    prepend "involution" $
+    prepend "invol" $
         prepend id $
         prepend (printPattern p) (printStmts stmts)
 
 printProc :: Procedure -> String
 printProc (Procedure id p stmts p') =
-    prepend "procedure" $
+    prepend "proc" $
         prepend id $
         prepend (printPattern p) $
         prepend (printStmts stmts) (printPattern p')
@@ -38,7 +38,7 @@ printStmt (Assign op var expr) =
         prepend (printRevOp op) $
         prepend var (printExpr expr)
 printStmt (Loop e1 s1 s2 e2) =
-    prepend "loop" $
+    prepend "loopS" $
         prepend (printExpr e1) $
         prepend (printStmts s1) $
         prepend (printStmts s2) (printExpr e2)
@@ -50,7 +50,7 @@ printStmt (Conditional e1 s1 s2 e2) =
 printStmt (Replacement p1 p2) =
     prepend "replacement" $
         prepend (printPattern p1) (printPattern p2)
-printStmt Skip = prepend "skip" "nil"
+printStmt Skip = prepend "skipS" "nil"
 
 printExpr :: Expression -> String
 printExpr (Constant c) = prepend "constant" (printConst c)
@@ -75,13 +75,13 @@ printPattern (PPair p1 p2) =
         prepend (printPattern p1) (printPattern p2)
 printPattern (PConst c) = prepend "constant" (printConst c)
 printPattern (Involute id p) =
-    prepend "involute" $
+    prepend "involuteS" $
         prepend id (printPattern p)
 printPattern (Call id p) =
-    prepend "call" $
+    prepend "callS" $
         prepend id (printPattern p)
 printPattern (Uncall id p) =
-    prepend "uncall" $
+    prepend "uncallS" $
         prepend id (printPattern p)
 
 printOp :: Op -> String

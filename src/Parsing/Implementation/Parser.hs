@@ -158,12 +158,12 @@ operator0 = pOperator $ choice [ And <$ symbol "&&"
                                , Or <$ symbol "||"
                                , Xor <$ symbol "^"]
 operator1 :: Parser Op
-operator1 = choice [ Gt <$ symbol ">"
+operator1 = choice [ GtEq <$ try (symbol ">=")
+                   , LtEq <$ try (symbol "<=")
+                   , Gt <$ symbol ">"
                    , Lt <$ symbol "<"
                    , Eq <$ symbol "="
-                   , Neq <$ symbol "!="
-                   , GtEq <$ symbol ">="
-                   , LtEq <$ symbol "<="]
+                   , Neq <$ symbol "!="]
 
 
 operator2 :: Parser (Expression -> Expression -> Expression)

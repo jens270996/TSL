@@ -1,7 +1,7 @@
 
 involution selfInterpreter (Program.Input)
     ('program.(Main . (Invols . Procs))) <- Program
-    ('involution. (Id. (P. Body))) <- Main
+    ('invol. (Id. (P. Body))) <- Main
     Table <- call createTable (Invols.Procs) 
     Env <- call deconstruct (('nil.Table).(P.Input))
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
@@ -43,8 +43,7 @@ procedure interpretStatement (Env.Statement)
         (Env.Var) <- call insertVar (Env.(Var.V))
         (Env.E) <- uncall interpretExpression (Env.(E.V2))
         Statement <- (Op.(Var.E))
-
-    else if Stype = 'loop then
+    else if Stype = 'loopS then
         (E1.(S1.(S2.E2))) <- Statement
         (Env.(E1.B1)) <- call interpretExpression (Env.E1)
         from B1
@@ -81,13 +80,13 @@ procedure interpretStatement (Env.Statement)
         (Env.P2) <- call deconstruct (Env.(P2.V))
         Statement <- (P1.P2)
 
-    else if Stype = 'skip then
+    else if Stype = 'skipS then
         skip
     else skip //should not reach here!!
-    fi Stype = 'skip
+    fi Stype = 'skipS
     fi Stype = 'replacement
     fi Stype = 'conditional
-    fi Stype = 'loop
+    fi Stype = 'loopS
     fi Stype = 'assign
     Statement <- (Stype.Statement)
 
@@ -101,16 +100,17 @@ involution interpretSymmetricStatement (Env. Statement)
 
 procedure interpretExpression (Env.E)
     (Etype.E) <- E
-    if Etype = 'constant
+    if Etype = 'constant then
         V^=E
-    else if Etype = 'variable
+    else if Etype = 'variable then
         (Env.(E.V)) <- call lookVar (Env.E)
-    else if Etype = 'operation
+    else if Etype = 'operation then
         (Op.(E1.E2)) <- E
         (Env.(E1.V1)) <- call interpretExpression (Env.E1)
         (Env.(E2.V2)) <- call interpretExpression (Env.E2)
-        ((Op.(V1.V))) <- call applyOp (Op.(V1.V2))
+        (Op.(V1.(V2.V))) <- call applyOp (Op.(V1.V2))
         (Env.E1) <- uncall interpretExpression (Env.(E1.V1)) 
+        (Env.E2) <- uncall interpretExpression (Env.(E2.V2))
         E <- (Op.(E1.E2))
     else skip // Should never reach here
     fi Etype = 'operation
@@ -131,32 +131,32 @@ procedure deconstruct (Env.(Pattern.Value))
     if Ptype = 'variable then
        (Env.Pvalue) <- call insertVar (Env.(Pvalue.Value))
     else if Ptype = 'constant && Pvalue = Value then skip
-    else if Ptype = 'pair &&  then
+    else if Ptype = 'pair then
         (P1.P2) <- Pvalue
         ('pair.(C1.C2)) <- Value
         (Env.P1) <- call deconstruct (Env.(P1.C1))
         (Env.P2) <- call deconstruct (Env.(P2.C2))
         Pvalue <- (P1.P2)
-    else if Ptype = 'involute then
+    else if Ptype = 'involuteS then
         (Id.P) <- Pvalue
         (Env.(P.Input)) <- uncall deconstruct (Env.P) 
-        (Env.(Id.('involution. (Id'.(P'.Body))))) <- call lookInvol (Env.Id)
+        (Env.(Id.('invol. (Id'.(P'.Body))))) <- call lookInvol (Env.Id)
         (Env.InvolEnv) <- call createEmptyEnv Env
         (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.Input))
         (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
         (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P')
         Env <- uncall createEmptyEnv (Env.InvolEnv)
-        (Env.Id) <- uncall lookInvol (Env.(Id.('involution. (Id'.(P'.Body)))))
+        (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (Id'.(P'.Body)))))
         (Env.P) <- call deconstruct (Env.(P.Output))
         Pvalue <- (Id.P)
-    else if Ptype = 'call then
+    else if Ptype = 'callS then
         (Env.Pvalue) <- call evalCall (Env.Pvalue)
-    else if Ptype = 'uncall then
+    else if Ptype = 'uncallS then
         (Env.Pvalue) <- uncall evalCall (Env.Pvalue)
     else Ptype ^= 'error //should never reach here
-    fi Ptype = 'uncall
-    fi Ptype = 'call
-    fi Ptype = 'involute
+    fi Ptype = 'uncallS
+    fi Ptype = 'callS
+    fi Ptype = 'involuteS
     fi Ptype = 'pair
     fi Ptype = 'constant
     fi Ptype ='variable
@@ -165,13 +165,13 @@ procedure deconstruct (Env.(Pattern.Value))
 
 procedure evalCall (Env.(Id.P))
     (Env.(P.Input)) <- uncall deconstruct (Env.P)
-    (Env.(Id.('procedure. (Id'.(PIn.(Body.POut)))))) <- call lookProc (Env.Id)
+    (Env.(Id.('proc. (Id'.(PIn.(Body.POut)))))) <- call lookProc (Env.Id)
     (Env.ProcEnv) <- call createEmptyEnv Env
     (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.Input))
     (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
     (ProcEnv.(POut.Output)) <- uncall deconstruct (ProcEnv.POut)
     Env <- uncall createEmptyEnv (Env.ProcEnv)
-    (Env.Id) <- uncall lookProc (Env.(Id.('procedure. (Id'.(PIn.(Body.POut))))))
+    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (Id'.(PIn.(Body.POut))))))
     (Env.P) <- call deconstruct (Env.(P.Output))
     return (Env.(Id.P))
 
@@ -229,33 +229,33 @@ procedure applyOp (Op.(V1.V2))
 // Procs = Map Id procedure
 
 procedure lookVar ((Table.Store).Var)
-    (Store.KVPair) <- look (Store.Var)
+    (Store.KVPair) <- call look (Store.Var)
     return ((Table.Store).KVPair)
 
 procedure insertVar ((Table.Store).KVPair)
-    (Store.KVPair) <- insert (Store.KVPair)
+    (Store.KVPair) <- call insert (Store.KVPair)
     return ((Table.Store).KVPair)
 
 procedure lookInvol (((Invols.Procs).Store).Id)
-    (Invols.KVPair) <- look (Invols.Id)
+    (Invols.KVPair) <- call look (Invols.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure lookProc (((Invols.Procs).Store).Id)
-    (Procs.KVPair) <- look (Procs.Id)
+    (Procs.KVPair) <- call look (Procs.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure createTable (Invols.Procs)
-    InvolTable <- createInvolTable Invols
-    ProcTable <- createProcTable Procs
+    InvolTable <- call createInvolTable Invols
+    ProcTable <- call createProcTable Procs
     return (InvolTable.ProcTable)
 
 procedure createInvolTable Invols
     if Invols = 'nil then skip
     else
         (Invol.Invols) <- Invols
-        ('involution. (Id.Invol)) <- Invol
+        ('invol. (Id.Invol)) <- Invol
         InvolTable <- call createInvolTable Invols
-        InvolTable <- ((Id.('involution.Invol)).InvolTable)
+        InvolTable <- ((Id.('invol.Invol)).InvolTable)
     fi InvolTable = 'nil
     return InvolTable
 
@@ -263,9 +263,9 @@ procedure createProcTable Procs
     if Procs = 'nil then skip
     else
         (Proc.Procs) <- Procs
-        ('procedure. (Id.Proc)) <- Proc
+        ('proc. (Id.Proc)) <- Proc
         ProcTable <- call createProcTable Procs
-        ProcTable <- ((Id.('procedure. Proc)).ProcTable)
+        ProcTable <- ((Id.('proc. Proc)).ProcTable)
     fi ProcTable = 'nil
     return ProcTable
 
@@ -340,7 +340,7 @@ procedure length List
 procedure countRec (List.C)
     if List = 'nil
     then skip
-    else C+=1
+    else C+='1
          (Head.Tail) <- List
          (Tail.C) <- call countRec (Tail.C)
          List <- (Head.Tail)

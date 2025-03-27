@@ -1,1 +1,1 @@
-(program.((involution.(swap.((pair.((variable.x).(variable.y))).((replacement.((pair.((variable.y).(variable.x))).(pair.((variable.x).(variable.y))))).nil)))).(nil.nil)))
+'((program.((invol.(swap.((pair.((variable.x).(variable.y))).((replacement.((pair.((variable.y).(variable.x))).(pair.((variable.x).(variable.y))))).nil)))).(nil.nil))).(pair.(1.2)))
