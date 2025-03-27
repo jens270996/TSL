@@ -2,7 +2,7 @@
 involution selfInterpreter (Program.Input)
     ('program.(Main . (Invols . Procs))) <- Program
     ('involution. (Id. (P. Body))) <- Main
-    Table <- (Invols.Procs) //TODO: create map with ids as keys
+    Table <- call createTable (Invols.Procs) 
     Env <- call deconstruct (('nil.Table).(P.Input))
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
 
@@ -17,9 +17,21 @@ involution selfInterpreter (Program.Input)
 
 // ------------------------------- Interpreters ------------------------------------------------------------------------
 involution interpretInvolutionBody (Env.Body)
+    (Init.Last) <- call unsnoc Body
+    (Env.Init) <- call interpretStatements Init
+    (Env.Last) <- involute interpretSymmetricStatement (Env.Last)
 
 
-
+procedure interpretStatements (Env.Statements)
+    if Statements = 'nil
+    then skip
+    else
+        (Statement.Statements) <- Statements
+        (Env.Statement) <- call interpretStatement (Env.Statement)
+        (Env.Statements) <- call interpretStatements (Env.Statements)
+        Statements <- (Statement.Statements)
+    fi Statements = 'nil
+    return (Env.Statements)
 
 procedure interpretStatement (Env.Statement)
     (Stype.Statement) <- Statement
@@ -128,16 +140,19 @@ procedure deconstruct (Env.(Pattern.Value))
     else if Ptype = 'involute then
         (Id.P) <- Pvalue
         (Env.(P.Input)) <- uncall deconstruct (Env.P) 
-        (Table.(Id.('involution. (Id'.(P'.Body))))) <- call lookInvol (Table.Id)
-        (Env.P') <- call deconstruct (Env.(P'.Input))
-        (Env.Body) <- involute interpretInvolutionBody (Env.Body)
-        (Env.(P'.Output)) <- uncall deconstruct (Env.P')
-        (Table.Id) <- uncall lookInvol (Table.(Id.('involution. (Id'.(P'.Body)))))
+        (Env.(Id.('involution. (Id'.(P'.Body))))) <- call lookInvol (Env.Id)
+        (Env.InvolEnv) <- call createEmptyEnv Env
+        (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.Input))
+        (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
+        (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P')
+        Env <- uncall createEmptyEnv (Env.InvolEnv)
+        (Env.Id) <- uncall lookInvol (Env.(Id.('involution. (Id'.(P'.Body)))))
         (Env.P) <- call deconstruct (Env.(P.Output))
         Pvalue <- (Id.P)
-    else if Ptype = 'call then skip // TODO
-    else if Ptype = 'uncall then skip // TODO
-        //utilize reversibility here?
+    else if Ptype = 'call then
+        (Env.Pvalue) <- call evalCall (Env.Pvalue)
+    else if Ptype = 'uncall then
+        (Env.Pvalue) <- uncall evalCall (Env.Pvalue)
     else Ptype ^= 'error //should never reach here
     fi Ptype = 'uncall
     fi Ptype = 'call
@@ -147,6 +162,19 @@ procedure deconstruct (Env.(Pattern.Value))
     fi Ptype ='variable
     Pattern <- (Ptype.Pvalue)
     return (Env.Pattern)
+
+procedure evalCall (Env.(Id.P))
+    (Env.(P.Input)) <- uncall deconstruct (Env.P)
+    (Env.(Id.('procedure. (Id'.(PIn.(Body.POut)))))) <- call lookProc (Env.Id)
+    (Env.ProcEnv) <- call createEmptyEnv Env
+    (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.Input))
+    (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
+    (ProcEnv.(POut.Output)) <- uncall deconstruct (ProcEnv.POut)
+    Env <- uncall createEmptyEnv (Env.ProcEnv)
+    (Env.Id) <- uncall lookProc (Env.(Id.('procedure. (Id'.(PIn.(Body.POut))))))
+    (Env.P) <- call deconstruct (Env.(P.Output))
+    return (Env.(Id.P))
+
 
 procedure applyOp (Op.(V1.V2))
     if Op = 'Xor then
@@ -215,6 +243,36 @@ procedure lookInvol (((Invols.Procs).Store).Id)
 procedure lookProc (((Invols.Procs).Store).Id)
     (Procs.KVPair) <- look (Procs.Id)
     return (((Invols.Procs).Store).KVPair)
+
+procedure createTable (Invols.Procs)
+    InvolTable <- createInvolTable Invols
+    ProcTable <- createProcTable Procs
+    return (InvolTable.ProcTable)
+
+procedure createInvolTable Invols
+    if Invols = 'nil then skip
+    else
+        (Invol.Invols) <- Invols
+        ('involution. (Id.Invol)) <- Invol
+        InvolTable <- call createInvolTable Invols
+        InvolTable <- ((Id.('involution.Invol)).InvolTable)
+    fi InvolTable = 'nil
+    return InvolTable
+
+procedure createProcTable Procs
+    if Procs = 'nil then skip
+    else
+        (Proc.Procs) <- Procs
+        ('procedure. (Id.Proc)) <- Proc
+        ProcTable <- call createProcTable Procs
+        ProcTable <- ((Id.('procedure. Proc)).ProcTable)
+    fi ProcTable = 'nil
+    return ProcTable
+
+
+procedure createEmptyEnv (Table.Store)
+    Table' ^= Table
+    return ((Table.Store).(Table'.'nil))
 
 
 
@@ -288,4 +346,23 @@ procedure countRec (List.C)
          List <- (Head.Tail)
     fi List = 'nil
     return (List.C)
+
+
+procedure unsnoc List
+    if List = 'nil
+    then skip
+    else
+        (List.C) <- call length List
+        if C = '1 then
+            (Last.'nil) <- List
+
+        else
+            (Head.Tail) <- List
+            (Init.Last) <- call unsnoc Tail
+            Init <- (Head.Init)
+        fi C = '1
+        C -= '1
+        Init <- uncall length (Init.C)
+    fi Last = 'nil && Init = 'nil
+    return (Init.Last)
 
