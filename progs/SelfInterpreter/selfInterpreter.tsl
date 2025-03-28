@@ -69,8 +69,8 @@ procedure interpretStatement (Env.Statement)
 
     else if Stype = 'replacement then
         (P1.P2) <- Statement
-        (Env.(P1.V)) <- uncall deconstruct (Env.P1)
-        (Env.P2) <- call deconstruct (Env.(P2.V))
+        (Env.(P2.V)) <- uncall deconstruct (Env.P2)
+        (Env.P1) <- call deconstruct (Env.(P1.V))
         Statement <- (P1.P2)
 
     else if Stype = 'skipS then
