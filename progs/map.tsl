@@ -1,0 +1,50 @@
+involution involutize (dir.(out.in))
+    if dir = 'true
+    then out <- call insert in
+    else skip
+    fi dir = 'true
+    dir ^= 'true
+
+//Assumes key is not already in map
+procedure insert (Map. (Key.Value))
+    //Maybe check here if key is already in (then value must be nil)
+    // Or enforce this invariant elsewhere?
+    // For instance if only using insert to modify map, then the invariant holds
+    // as we never insert with 'nil as value.
+    if Value = 'nil
+    then (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    else
+        if Map = 'nil
+        then Key' ^= Key
+            Map <- ((Key'.Value).'nil)
+            (Map.Length) <- call length Map
+        else ((Key'.Value').Map) <- Map //Error here!!!!
+            if Key' < Key then
+                (Map.Key) <- call insert (Map. (Key.Value))
+            else
+                Map <- ((Key'.Value').Map)
+                (Key'.Value') <- (Key.Value)
+                Key ^= Key'
+            fi Key' < Key
+            Map <- ((Key'.Value').Map)
+            (Map.Length) <- call length Map
+        fi Length = '1
+        Map <- uncall length (Map.Length)
+        (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    fi IsIn = 'nil
+    (Map.Key) <- uncall isKey (IsIn.(Map.Key))
+    return (Map.Key)
+
+
+procedure isKey (Map.Key)
+    if Map = 'nil
+    then skip
+    else
+        ((Key'.Val').Map) <- Map
+        if Key' = Key
+        then In ^= 'true
+        else (In.(Map.Key)) <- call isKey (Map.Key)
+        fi Key' = Key
+        Map <- ((Key'.Val').Map)
+    fi Map = 'nil
+    return (In.(Map.Key))

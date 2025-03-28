@@ -84,9 +84,12 @@ overrideC var c = Computation (\trace (_,_) vars -> case c of
                                             Nil -> Right ((), Map.delete var vars,trace)
                                             _ -> Right ((),Map.insert var c vars,trace))
 
--- TODO: extend with env
+printError :: Trace -> VariableStore -> String -> String
+printError t v s =
+    "Environment contained: \n"++ printStore v ++ "Trace contained: \n"++ printTrace t ++ "\nCaught error: " ++ s  ++ "\n"
+
 throwC :: String -> Computation ()
-throwC e = Computation (\trace (_,_) varStore -> Left $ "Environment contained: \n"++ printStore varStore ++ "Trace contained: \n"++ printTrace trace ++ "\nCaught error: " ++ e  ++ "\n")
+throwC e = Computation (\trace (_,_) varStore -> Left $ printError trace varStore e )
 
 printTrace :: Trace -> String
 printTrace t = "[" ++ concat ((map (++ ",\n")) . reverse $ t) ++ "]\n"
@@ -95,8 +98,11 @@ printStore :: VariableStore -> String
 printStore = show
 
 
-assertEnvironmentEmptyC :: Computation ()
-assertEnvironmentEmptyC = Computation (\trace _ vars -> if vars == Map.empty then Right ((),vars,trace) else Left $ "Environment must be empty at return from function. Non-empty vars: " ++ (show vars))
+assertEnvironmentEmptyC :: String -> Computation ()
+assertEnvironmentEmptyC s = Computation (\trace _ vars -> if vars == Map.empty
+                                                        then Right ((),vars,trace)
+                                                        else Left $ printError trace vars
+                                                                ("Environment must be empty at return from function. Returning from: " ++ s ++ " Non-empty vars: " ++ (show vars)))
 
 getEnvironmentC :: Computation VariableStore
 getEnvironmentC = Computation (\trace _ vars -> Right (vars,vars,trace))
@@ -125,7 +131,7 @@ class Monad cm => ComputationMonad cm where
   getInvolution :: Identifier -> cm Involution
   getEnvironment :: cm VariableStore
   withEnvironment :: VariableStore -> cm ()
-  assertEnvironmentEmpty :: cm ()
+  assertEnvironmentEmpty :: String -> cm ()
   trace :: String -> cm ()
   -- Throw an error
   throw :: String -> cm ()

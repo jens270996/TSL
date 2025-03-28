@@ -85,7 +85,7 @@ construct (Involute name p) =
        deconstruct pIn c1
        interpretInvolution involution
        c <- construct pIn
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty name
        withEnvironment oldEnv
        return c
 construct (Call name p) =
@@ -98,7 +98,7 @@ construct (Call name p) =
        interpretStatements s
        c <- construct pOut
        trace $ "return from RHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ show c
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty (name ++ " RHS call ")
        withEnvironment oldEnv
        return c
 construct (Uncall name p) =
@@ -111,7 +111,7 @@ construct (Uncall name p) =
        reverseInterpretStatements s
        c <- construct pIn
        trace $ "return from RHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ show c
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty name
        withEnvironment oldEnv
        return c
 deconstruct :: Pattern -> Constant -> Computation ()
@@ -129,7 +129,7 @@ deconstruct (Involute name p) c =
        deconstruct pIn c
        interpretInvolution involution
        c' <- construct pIn
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty name
        withEnvironment outerEnv
        deconstruct p c'
 deconstruct (Call name p) c =
@@ -140,7 +140,7 @@ deconstruct (Call name p) c =
        deconstruct pOut c
        reverseInterpretStatements s
        c' <- construct pIn
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty name
        withEnvironment outerEnv
        deconstruct p c'
 deconstruct (Uncall name p) c =
@@ -151,7 +151,7 @@ deconstruct (Uncall name p) c =
        deconstruct pIn c
        interpretStatements s
        c' <- construct pOut
-       assertEnvironmentEmpty
+       assertEnvironmentEmpty name
        withEnvironment outerEnv
        deconstruct p c'
 

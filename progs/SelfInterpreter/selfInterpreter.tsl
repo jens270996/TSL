@@ -57,7 +57,6 @@ procedure interpretStatement (Env.Statement)
         (Env.(E1.B1)) <- call interpretExpression (Env.E1)
         if B1 then
             (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
-            'hi <- call debug 'hi
             (Env.S1) <- call interpretStatements (Env.S1)
             (Env.(E2.B2)) <- call interpretExpression (Env.E2)
         else
@@ -122,7 +121,7 @@ procedure deconstruct (Env.(Pattern.Value))
     (Ptype.Pvalue) <- Pattern
     if Ptype = 'variable then
        (Env.Pvalue) <- call insertVar (Env.(Pvalue.Value))
-    else if Ptype = 'constant && Pvalue = Value then skip
+    else if Ptype = 'constant && Pvalue = Value then Value ^= Pvalue
     else if Ptype = 'pair then
         (P1.P2) <- Pvalue
         (C1.C2) <- Value
@@ -132,13 +131,13 @@ procedure deconstruct (Env.(Pattern.Value))
     else if Ptype = 'involuteS then
         (Id.P) <- Pvalue
         (Env.(P.Input)) <- uncall deconstruct (Env.P) 
-        (Env.(Id.('invol. (Id'.(P'.Body))))) <- call lookInvol (Env.Id)
+        (Env.(Id.('invol. (P'.Body)))) <- call lookInvol (Env.Id)
         (Env.InvolEnv) <- call createEmptyEnv Env
         (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.Input))
         (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
         (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P')
         Env <- uncall createEmptyEnv (Env.InvolEnv)
-        (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (Id'.(P'.Body)))))
+        (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (P'.Body))))
         (Env.P) <- call deconstruct (Env.(P.Output))
         Pvalue <- (Id.P)
     else if Ptype = 'callS then
@@ -157,14 +156,16 @@ procedure deconstruct (Env.(Pattern.Value))
 
 procedure evalCall (Env.(Id.P))
     (Env.(P.Input)) <- uncall deconstruct (Env.P)
-    (Env.(Id.('proc. (Id'.(PIn.(Body.POut)))))) <- call lookProc (Env.Id)
+    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+    Env <- call debug Env
     (Env.ProcEnv) <- call createEmptyEnv Env
     ProcEnv <- call debug ProcEnv
+    P <- call debug P
     (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.Input))
     (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
     (ProcEnv.(POut.Output)) <- uncall deconstruct (ProcEnv.POut)
     Env <- uncall createEmptyEnv (Env.ProcEnv)
-    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (Id'.(PIn.(Body.POut))))))
+    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (PIn.(Body.POut)))))
     (Env.P) <- call deconstruct (Env.(P.Output))
     return (Env.(Id.P))
 
@@ -180,7 +181,7 @@ procedure applyRevOp (Op.(V1.V2))
     fi Op = 'Sub
     fi Op = 'Add
     fi Op = 'Xor
-    return (Op.(V.V2))
+    return (Op.(V1.V2))
 
 procedure applyOp (Op.(V1.V2))
     if Op = 'Xor then
