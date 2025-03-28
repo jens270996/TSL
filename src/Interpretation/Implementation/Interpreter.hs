@@ -199,7 +199,7 @@ applyOp Neq c1 c2 = return $ if c1 == c2 then falseV else trueV
 applyOp GtEq (Integer i1) (Integer i2) = return $ if i1 >= i2 then trueV else falseV
 applyOp LtEq (Integer i1) (Integer i2) = return $ if i1 <= i2 then trueV else falseV
 applyOp Gt _ _ = throw "> expects integers." >> return Nil
-applyOp Lt _ _ = throw "< expects integers." >> return Nil
+applyOp Lt c1 c2 = throw ("< expects integers. Got: " ++ show c1 ++ "<" ++ show c2)  >> return Nil
 applyOp GtEq _ _ = throw ">= expects integers." >> return Nil
 applyOp LtEq _ _ = throw "<= expects integers." >> return Nil
 

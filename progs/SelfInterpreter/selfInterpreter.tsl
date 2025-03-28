@@ -2,8 +2,9 @@
 involution selfInterpreter (Program.Input)
     ('program.(Main . (Invols . Procs))) <- Program
     ('invol. (Id. (P. Body))) <- Main
-    Table <- call createTable (Invols.Procs) 
-    (Env.P) <- call deconstruct ((Table.'nil).(P.Input))
+    Table <- call createTable (Invols.Procs)
+    Env <- (Table.'nil)
+    (Env.P) <- call deconstruct (Env.(P.Input))
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
 
 
@@ -56,6 +57,7 @@ procedure interpretStatement (Env.Statement)
         (Env.(E1.B1)) <- call interpretExpression (Env.E1)
         if B1 then
             (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            'hi <- call debug 'hi
             (Env.S1) <- call interpretStatements (Env.S1)
             (Env.(E2.B2)) <- call interpretExpression (Env.E2)
         else
@@ -84,6 +86,9 @@ procedure interpretStatement (Env.Statement)
 
     return (Env.Statement)
 
+
+procedure debug msg
+    return msg
 
 involution interpretSymmetricStatement (Env. Statement)
     Env' ^= Env
@@ -154,6 +159,7 @@ procedure evalCall (Env.(Id.P))
     (Env.(P.Input)) <- uncall deconstruct (Env.P)
     (Env.(Id.('proc. (Id'.(PIn.(Body.POut)))))) <- call lookProc (Env.Id)
     (Env.ProcEnv) <- call createEmptyEnv Env
+    ProcEnv <- call debug ProcEnv
     (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.Input))
     (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
     (ProcEnv.(POut.Output)) <- uncall deconstruct (ProcEnv.POut)
@@ -237,11 +243,11 @@ procedure insertVar ((Table.Store).KVPair)
     return ((Table.Store).KVPair)
 
 procedure lookInvol (((Invols.Procs).Store).Id)
-    (Invols.KVPair) <- call look (Invols.Id)
+    (Invols.KVPair) <- call lookUnordered (Invols.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure lookProc (((Invols.Procs).Store).Id)
-    (Procs.KVPair) <- call look (Procs.Id)
+    (Procs.KVPair) <- call lookUnordered (Procs.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure createTable (Invols.Procs)
@@ -279,6 +285,19 @@ procedure createEmptyEnv (Table.Store)
 
 
 // ----------------------------------------- Map functions ----------------------------------------------------------------
+
+procedure lookUnordered (Map.Key)
+    if Map = 'nil
+    then skip
+    else
+        ((Key'.Val').Map) <- Map
+        if Key' = Key
+        then Val ^= Val'
+        else (Val.(Map.Key)) <- call lookUnordered (Map.Key)
+        fi Key' = Key
+        Map <- ((Key'.Val').Map)
+    fi Map = 'nil
+    return (Map.(Key.Val))
 
 procedure look (Map.Key)
     (Map.(Key.Value)) <- uncall insert (Map.Key)

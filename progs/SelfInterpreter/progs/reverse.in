@@ -1,0 +1,5 @@
+'(
+(program.((invol.(reverse.((variable.1).((assign.(Xor.(2.(variable.1)))).((replacement.((variable.1).(callS.(reverseProc.(variable.1))))).((replacement.((pair.((variable.1).(variable.2))).(pair.((variable.2).(variable.1))))).nil)))))).(nil.((proc.(reverseProc.((variable.1).(((loopS.((operation.(Eq.((variable.3).(constant.nil)))).(((skipS.nil).nil).(((replacement.((pair.((variable.4).(variable.1))).(variable.1))).((replacement.((variable.3).(pair.((variable.4).(variable.3))))).nil)).(operation.(Eq.((variable.1).(constant.nil)))))))).nil).(variable.3))))).nil))))
+.
+(1.(2.(3.nil)))
+)

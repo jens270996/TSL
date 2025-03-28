@@ -101,10 +101,10 @@ printExpr (Operation op e1 e2) =
         prepend e1' e2'
 
 printConst :: Constant -> String
-printConst (Integer i) = prepend "integer" (show i)
-printConst (Atom a) = prepend "atom" a
-printConst Nil = prepend "nil" "nil"
-printConst (CPair c1 c2) = prepend "pair" $ prepend (printConst c1) (printConst c2)
+printConst (Integer i) = show i
+printConst (Atom a) = a
+printConst Nil = "nil"
+printConst (CPair c1 c2) = prepend (printConst c1) (printConst c2)
 
 printPattern :: Pattern -> Counter String
 printPattern (PVar v) = do v' <- getIdentifier v
