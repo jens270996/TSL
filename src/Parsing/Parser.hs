@@ -1,3 +1,3 @@
-module Parsing.Parser (parseProgram, parseInput) where
+module Parsing.Parser (parseProgram, parseInput,removeLeadingWhitespace) where
 
 import Parsing.Implementation.Parser

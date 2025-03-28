@@ -86,7 +86,7 @@ overrideC var c = Computation (\trace (_,_) vars -> case c of
 
 -- TODO: extend with env
 throwC :: String -> Computation ()
-throwC e = Computation (\trace (_,_) varStore -> Left $ "Caught error: " ++ e ++ "\n" ++ "Environment contained: \n"++ printStore varStore ++ "Trace contained: \n"++ printTrace trace)
+throwC e = Computation (\trace (_,_) varStore -> Left $ "Environment contained: \n"++ printStore varStore ++ "Trace contained: \n"++ printTrace trace ++ "\nCaught error: " ++ e  ++ "\n")
 
 printTrace :: Trace -> String
 printTrace t = "[" ++ concat ((map (++ ",\n")) . reverse $ t) ++ "]\n"

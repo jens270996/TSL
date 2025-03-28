@@ -4,17 +4,7 @@ involution selfInterpreter (Program.Input)
     ('invol. (Id. (P. Body))) <- Main
     Table <- call createTable (Invols.Procs) 
     (Env.P) <- call deconstruct ((Table.'nil).(P.Input))
-    Env <- call check Env
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
-
-
-
-
-
-
-
-procedure check E
- return E
 
 
 // ------------------------------- Interpreters ------------------------------------------------------------------------
@@ -118,13 +108,8 @@ procedure interpretExpression (Env.E)
     fi Etype = 'operation
     fi Etype = 'variable
     fi Etype = 'constant
+    E <- (Etype.E)
     return (Env.(E.V))
-
-
-
-
-
-
 
 // -------------------------------- Auxillary procedures -----------------------------------------------------------------
 
@@ -135,7 +120,7 @@ procedure deconstruct (Env.(Pattern.Value))
     else if Ptype = 'constant && Pvalue = Value then skip
     else if Ptype = 'pair then
         (P1.P2) <- Pvalue
-        ('pair.(C1.C2)) <- Value
+        (C1.C2) <- Value
         (Env.P1) <- call deconstruct (Env.(P1.C1))
         (Env.P2) <- call deconstruct (Env.(P2.C2))
         Pvalue <- (P1.P2)
@@ -177,6 +162,19 @@ procedure evalCall (Env.(Id.P))
     (Env.P) <- call deconstruct (Env.(P.Output))
     return (Env.(Id.P))
 
+
+procedure applyRevOp (Op.(V1.V2))
+    if Op = 'Xor then
+        V1 ^= V2
+    else if Op = 'Add then
+        V1 += V2
+    else if Op = 'Sub then
+        V1 -= V2
+    else skip //Should never reach here
+    fi Op = 'Sub
+    fi Op = 'Add
+    fi Op = 'Xor
+    return (Op.(V.V2))
 
 procedure applyOp (Op.(V1.V2))
     if Op = 'Xor then

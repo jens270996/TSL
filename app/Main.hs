@@ -1,6 +1,6 @@
 module Main where
 
-import Parsing.Parser (parseProgram,parseInput)
+import Parsing.Parser (parseProgram,parseInput, removeLeadingWhitespace)
 import Utils.Error (ErrorMonad)
 
 import Control.Monad
@@ -9,7 +9,7 @@ import System.Exit (die)
 import Interpretation.Interpreter
 import ASTPrinting.Printer (printProgram)
 
-data Options = Interpret InterpretOptions | Convert ConvertOptions
+data Options = Interpret InterpretOptions | Convert ConvertOptions | Pair PairOptions
 
 data InterpretOptions = InterpretOptions
   {
@@ -23,6 +23,14 @@ data ConvertOptions = ConvertOptions
   , destinationFile :: String
   , verboseC :: Bool
   }
+data PairOptions = PairOptions
+  {
+    in1 :: String
+  , in2 :: String
+  , out :: String
+  , verboseP :: Bool
+  }
+
 
 interpretParser :: Parser Options
 interpretParser = Interpret <$> (InterpretOptions
@@ -41,6 +49,15 @@ convertParser = Convert <$> (ConvertOptions
                            <> short 'v'
                            <> help "Print additional information for debugging purposes.")
               )
+pairParser :: Parser Options
+pairParser = Pair <$> (PairOptions
+               <$> argument str (metavar "<Input file 1>")
+               <*> argument str (metavar "<Input file 2>")
+               <*> argument str (metavar "<Destination file>")
+               <*> flag True False (long "verbose"
+                           <> short 'v'
+                           <> help "Print additional information for debugging purposes.")
+              )
 
 
 optParser :: Parser Options
@@ -49,6 +66,8 @@ optParser = hsubparser
                 (progDesc "Interpret a TSL program"))
                 <> command "convert" (info convertParser
                     (progDesc "Convert a TSL program into AST used by self-interpreter"))
+                <> command "pair" (info pairParser
+                    (progDesc "Pair two input files i1 and i2 into a single input (i1.i2)"))
               )
 
 optsParser :: ParserInfo Options
@@ -65,7 +84,13 @@ main = do
   case options of
     Interpret opts -> interpretMain opts
     Convert opts -> convertMain opts
+    Pair opts -> pairMain opts
 
+pairMain :: PairOptions -> IO ()
+pairMain PairOptions {in1=path1, in2=path2 , out=pathOut, verboseP=v} =
+  do input1 <- readFile path1
+     input2 <- readFile path2
+     writeFile pathOut ("'(\n" ++ (tail . removeLeadingWhitespace $ input1) ++ "\n.\n" ++ (tail . removeLeadingWhitespace $ input2) ++ "\n)")
 
 convertMain :: ConvertOptions -> IO ()
 convertMain ConvertOptions {sourceFile=inputPath, destinationFile=outputPath, verboseC=v} =

@@ -170,7 +170,7 @@ loopInner b e1 s1 s2 e2 =
 applyRevOp :: ReversibleOp -> Constant -> Constant -> Computation Constant
 applyRevOp XorR Nil c2 = return c2
 applyRevOp XorR c1 c2 | c1==c2 = return Nil
-applyRevOp XorR _ _ = throw "Error in reversible XOR" >> return Nil
+applyRevOp XorR c1 c2 = (throw $ "Error in reversible XOR: " ++ show c1 ++ "^=" ++ show c2)  >> return Nil
 applyRevOp AddR (Integer i1) (Integer i2) = return (Integer (i1+i2))
 applyRevOp AddR _ _ = throw "Error in reversible Add" >> return Nil
 applyRevOp SubR (Integer i1) (Integer i2) = return (Integer (i1-i2))

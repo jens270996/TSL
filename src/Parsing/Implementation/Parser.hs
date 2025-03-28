@@ -15,6 +15,12 @@ parseString p s = case parse (p <* eof) "" s of
                     Left e -> Left (show e)
 
 
+removeLeadingWhitespace :: String -> String
+removeLeadingWhitespace s =
+    case parseString (whitespace *> (many anyChar)) s of
+        Right a -> a
+        Left e -> error $ "Tried to remove leading whitespace, got error: " ++ e
+
 parseProgram:: String -> ErrorMonad Program
 parseProgram = parseString (whitespace *> pProgram)
 parseInput:: String -> ErrorMonad Constant

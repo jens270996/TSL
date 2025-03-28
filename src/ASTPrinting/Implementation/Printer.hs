@@ -2,8 +2,7 @@ module ASTPrinting.Implementation.Printer where
 
 import TSL.AST
 import ASTPrinting.Implementation.Counter
-import Data.Functor
--- (program . (main . (invols . procs)))
+-- '(program . (main . (invols . procs)))
 printProgram :: Program -> String
 printProgram p =
     let (s,_,_) = runCounter (printProg p) emptyVariables 0
@@ -13,10 +12,10 @@ printProg (Program main invols procs) =
     do main' <- printInvol main
        invols' <- printInvols invols
        procs' <- printProcs procs
-       return $
-        prepend "program" $
+       return $ "'"++
+        (prepend "program" $
         prepend main' $
-        prepend invols' procs'
+        prepend invols' procs')
 
 printInvols :: [Involution] -> Counter String
 printInvols invols =
