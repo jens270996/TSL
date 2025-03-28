@@ -130,20 +130,27 @@ procedure deconstruct (Env.(Pattern.Value))
         Pvalue <- (P1.P2)
     else if Ptype = 'involuteS then
         (Id.P) <- Pvalue
-        (Env.(P.Input)) <- uncall deconstruct (Env.P) 
         (Env.(Id.('invol. (P'.Body)))) <- call lookInvol (Env.Id)
+
+        // deconstruct value into empty env
         (Env.InvolEnv) <- call createEmptyEnv Env
-        (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.Input))
+        (InvolEnv.P) <- call deconstruct (InvolEnv.(P.Value)) 
         (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
-        (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P')
+        
+        // construct output value + env must be empty after
+        (InvolEnv.(P.Output)) <- uncall deconstruct (InvolEnv.P)
         Env <- uncall createEmptyEnv (Env.InvolEnv)
+
         (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (P'.Body))))
+
+        // deconstruct output into outer env
         (Env.P) <- call deconstruct (Env.(P.Output))
         Pvalue <- (Id.P)
+
     else if Ptype = 'callS then
-        (Env.Pvalue) <- call evalCall (Env.Pvalue)
+        (Env.Pvalue) <- call deconsCall (Env.(Pvalue.Value))
     else if Ptype = 'uncallS then
-        (Env.Pvalue) <- uncall evalCall (Env.Pvalue)
+        (Env.Pvalue) <- call deconsUncall (Env.(Pvalue.Value))
     else Ptype ^= 'error //should never reach here
     fi Ptype = 'uncallS
     fi Ptype = 'callS
@@ -154,19 +161,40 @@ procedure deconstruct (Env.(Pattern.Value))
     Pattern <- (Ptype.Pvalue)
     return (Env.Pattern)
 
-procedure evalCall (Env.(Id.P))
-    (Env.(P.Input)) <- uncall deconstruct (Env.P)
-    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
-    Env <- call debug Env
+
+procedure deconsUncall (Env.((Id.P).V))
+
     (Env.ProcEnv) <- call createEmptyEnv Env
-    ProcEnv <- call debug ProcEnv
-    P <- call debug P
-    (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.Input))
+    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+
+    (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.V))
     (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
-    (ProcEnv.(POut.Output)) <- uncall deconstruct (ProcEnv.POut)
+
+    (ProcEnv.(POut.V))<- uncall deconstruct (ProcEnv.POut)
     Env <- uncall createEmptyEnv (Env.ProcEnv)
+
+
+    (Env.P) <- call deconstruct (Env.(P.V))
+
     (Env.Id) <- uncall lookProc (Env.(Id.('proc. (PIn.(Body.POut)))))
-    (Env.P) <- call deconstruct (Env.(P.Output))
+    return (Env.(Id.P))
+
+
+procedure deconsCall (Env.((Id.P).V))
+
+    (Env.ProcEnv) <- call createEmptyEnv Env
+    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+
+    (ProcEnv.POut) <- call deconstruct (ProcEnv.(POut.V))
+    (ProcEnv.Body) <- uncall interpretStatements (ProcEnv.Body)
+
+    (ProcEnv.(PIn.V))<- uncall deconstruct (ProcEnv.PIn)
+    Env <- uncall createEmptyEnv (Env.ProcEnv)
+
+
+    (Env.P) <- call deconstruct (Env.(P.V))
+
+    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (PIn.(Body.POut)))))
     return (Env.(Id.P))
 
 
