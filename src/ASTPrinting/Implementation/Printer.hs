@@ -53,12 +53,11 @@ printProc (Procedure id pIn stmts pOut) =
 
 printStmt :: Statement -> Counter String
 printStmt (Assign op var expr) =
-    do v' <- getIdentifier var
-       expr' <- printExpr expr
+    do expr' <- printExpr expr
        return $
         prepend "assign" $
         prepend (printRevOp op) $
-        prepend (show v') expr'
+        prepend var expr'
 
 printStmt (Loop e1 s1 s2 e2) =
     do e1' <- printExpr e1
@@ -90,8 +89,7 @@ printStmt Skip = return $ prepend "skipS" "nil"
 
 printExpr :: Expression -> Counter String
 printExpr (Constant c) = return $ prepend "constant" (printConst c)
-printExpr (EVar v) = do v' <- getIdentifier v
-                        return $ prepend "variable" (show v')
+printExpr (EVar v) = return $ prepend "variable" v
 printExpr (Operation op e1 e2) =
     do e1' <- printExpr e1
        e2' <- printExpr e2
@@ -107,8 +105,7 @@ printConst Nil = "nil"
 printConst (CPair c1 c2) = prepend (printConst c1) (printConst c2)
 
 printPattern :: Pattern -> Counter String
-printPattern (PVar v) = do v' <- getIdentifier v
-                           return $ prepend "variable" (show v')
+printPattern (PVar v) = return $ prepend "variable" v
 printPattern (PPair p1 p2) =
     do s1 <- printPattern p1
        s2 <- printPattern p2

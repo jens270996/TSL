@@ -211,7 +211,7 @@ pair p f = (do symbol "("
 atom :: Parser Atom
 atom = lexeme $
                 do c <- letter
-                   cs <- many alphaNum
+                   cs <- many pChar
                    if (c:cs) `elem` keywords then fail "keyword used as atom" else return (c:cs) 
 
 
@@ -227,7 +227,7 @@ keyword s = lexeme . try $ string s *> notFollowedBy alphaNum
 identifier :: Parser Identifier
 identifier = lexeme . try $
                 do c <- letter
-                   cs <- many alphaNum
+                   cs <- many pChar
                    if (c:cs) `elem` keywords then fail "keyword used as identifier" else return (c:cs)
 
 variable :: Parser Variable

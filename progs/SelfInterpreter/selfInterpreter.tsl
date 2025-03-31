@@ -3,13 +3,15 @@ involution selfInterpreter (Program.Input)
     ('program.(Main . (Invols . Procs))) <- Program
     ('invol. (Id. (P. Body))) <- Main
     Table <- call createTable (Invols.Procs)
-    Env <- (Table.'nil)
+    ((Table.'nil).((P.Body).Env)) <- call createEmptyEnvInvol ((Table.'nil).(P.Body))
     (Env.P) <- call deconstruct (Env.(P.Input))
     (Env.Body) <- involute interpretInvolutionBody (Env.Body)
 
 
 // ------------------------------- Interpreters ------------------------------------------------------------------------
 involution interpretInvolutionBody (Env.Body)
+    (Table.Store) <- Env
+    Env <- (Table.Store)
     (Init.Last) <- call unsnoc Body
     (Env.Init) <- call interpretStatements (Env.Init)
     (Env.Last) <- involute interpretSymmetricStatement (Env.Last)
@@ -31,9 +33,9 @@ procedure interpretStatement (Env.Statement)
     if Stype = 'assign then
         (Op.(Var.E)) <- Statement
         (Env.(E.V2)) <- call interpretExpression (Env.E)
-        (Env.(Var.V1)) <- uncall insertVar (Env.Var)
+        (Env.(Var.V1)) <- call getVar (Env.Var)
         (Op.(V.V2)) <- call applyRevOp (Op.(V1.V2))
-        (Env.Var) <- call insertVar (Env.(Var.V))
+        (Env.Var) <- uncall getVar (Env.(Var.V))
         (Env.E) <- uncall interpretExpression (Env.(E.V2))
         Statement <- (Op.(Var.E))
     else if Stype = 'loopS then
@@ -85,10 +87,6 @@ procedure interpretStatement (Env.Statement)
 
     return (Env.Statement)
 
-
-procedure debug msg
-    return msg
-
 involution interpretSymmetricStatement (Env. Statement)
     Env' ^= Env
     (Env. Statement) <- call interpretStatement (Env. Statement)
@@ -120,7 +118,7 @@ procedure interpretExpression (Env.E)
 procedure deconstruct (Env.(Pattern.Value))
     (Ptype.Pvalue) <- Pattern
     if Ptype = 'variable then
-       (Env.Pvalue) <- call insertVar (Env.(Pvalue.Value))
+       (Env.Pvalue) <- uncall getVar (Env.(Pvalue.Value))
     else if Ptype = 'constant && Pvalue = Value then Value ^= Pvalue
     else if Ptype = 'pair then
         (P1.P2) <- Pvalue
@@ -149,13 +147,13 @@ procedure deconsInvolute (Env.((Id.P).V))
         (Env.(Id.('invol. (P'.Body)))) <- call lookInvol (Env.Id)
 
         // deconstruct value into empty env
-        (Env.InvolEnv) <- call createEmptyEnv Env
+        (Env.((P'.Body).InvolEnv)) <- call createEmptyEnvInvol (Env.(P'.Body))
         (InvolEnv.P) <- call deconstruct (InvolEnv.(P.Value)) 
         (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
         
         // construct output value + env must be empty after
         (InvolEnv.(P.Output)) <- uncall deconstruct (InvolEnv.P)
-        Env <- uncall createEmptyEnv (Env.InvolEnv)
+        (Env.(P'.Body)) <- uncall createEmptyEnvInvol (Env.((P'.Body).InvolEnv))
 
         (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (P'.Body))))
 
@@ -166,15 +164,14 @@ procedure deconsInvolute (Env.((Id.P).V))
 
 procedure deconsUncall (Env.((Id.P).V))
 
-    (Env.ProcEnv) <- call createEmptyEnv Env
     (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+    (Env.((PIn.(Body.POut)).ProcEnv)) <- call createEmptyEnvProc (Env.(PIn.(Body.POut)))
 
     (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.V))
     (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
 
     (ProcEnv.(POut.V))<- uncall deconstruct (ProcEnv.POut)
-    Env <- uncall createEmptyEnv (Env.ProcEnv)
-
+    (Env.(PIn.(Body.POut))) <- uncall createEmptyEnvProc (Env.((PIn.(Body.POut)).ProcEnv))
 
     (Env.P) <- call deconstruct (Env.(P.V))
 
@@ -184,21 +181,17 @@ procedure deconsUncall (Env.((Id.P).V))
 
 procedure deconsCall (Env.((Id.P).V))
 
-    (Env.ProcEnv) <- call createEmptyEnv Env
     (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+    (Env.((PIn.(Body.POut)).ProcEnv)) <- call createEmptyEnvProc (Env.(PIn.(Body.POut)))
 
     (ProcEnv.POut) <- call deconstruct (ProcEnv.(POut.V))
     (ProcEnv.Body) <- uncall interpretStatements (ProcEnv.Body)
-
     (ProcEnv.(PIn.V))<- uncall deconstruct (ProcEnv.PIn)
-    Env <- uncall createEmptyEnv (Env.ProcEnv)
 
+    (Env.(PIn.(Body.POut))) <- uncall createEmptyEnvProc (Env.((PIn.(Body.POut)).ProcEnv))
 
     (Env.P) <- call deconstruct (Env.(P.V))
-    (A.B) <- (Env.(Id.('proc. (PIn.(Body.POut))))) //Error here!!
-    A <- call debug A
-    B <- call debug B
-    call lookProc (Env.Id) <- (A.B)
+    call lookProc (Env.Id) <- (Env.(Id.('proc. (PIn.(Body.POut)))))
     return (Env.(Id.P))
 
 procedure debug X
@@ -264,7 +257,7 @@ procedure applyOp (Op.(V1.V2))
 // ----------------------------------------- Environment auxillary functions -----------------------------------------------
 // Environment = (Table.Store)
 // Table = (Invols.Procs)
-// Store = Map Var Value
+// Store = Map Var (CountOccurences.Value)
 // Invols = Map Id involution
 // Procs = Map Id procedure
 
@@ -272,16 +265,16 @@ procedure lookVar ((Table.Store).Var)
     (Store.KVPair) <- call look (Store.Var)
     return ((Table.Store).KVPair)
 
-procedure insertVar ((Table.Store).KVPair)
-    (Store.KVPair) <- call insert (Store.KVPair)
+procedure getVar ((Table.Store).Key)
+    (Store.KVPair) <- call get (Store.Key)
     return ((Table.Store).KVPair)
 
 procedure lookInvol (((Invols.Procs).Store).Id)
-    (Invols.KVPair) <- call lookUnordered (Invols.Id)
+    (Invols.KVPair) <- call look (Invols.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure lookProc (((Invols.Procs).Store).Id)
-    (Procs.KVPair) <- call lookUnordered (Procs.Id)
+    (Procs.KVPair) <- call look (Procs.Id)
     return (((Invols.Procs).Store).KVPair)
 
 procedure createTable (Invols.Procs)
@@ -309,10 +302,32 @@ procedure createProcTable Procs
     fi ProcTable = 'nil
     return ProcTable
 
+procedure createEmptyEnvInvol ((Table.Store). (P.Body))
+    (Body.BodyVars) <- call variablesStmts (Body.'nil)
+    (P.Vars) <- call variablesP (P.BodyVars)
 
-procedure createEmptyEnv (Table.Store)
+    (Vars.VarsC) <- call registerVars Vars
+    (Vars.Store') <- call resetCounts (Vars.VarsC)
+    (P.BodyVars) <- uncall variablesP (P.Vars)
+    (Body.'nil) <- uncall variablesStmts (Body.BodyVars)
+
     Table' ^= Table
-    return ((Table.Store).(Table'.'nil))
+    return ((Table.Store).((P.Body).(Table'.Store')))
+
+procedure createEmptyEnvProc ((Table.Store). (PIn.(Body.POut)))
+    (PIn. VarsIn) <- call variablesP (PIn.'nil)
+    (Body.BodyVars) <- call variablesStmts (Body.VarsIn)
+    (POut.Vars) <- call variablesP (POut.BodyVars)
+
+    (Vars.VarsC) <- call registerVars Vars
+    (Vars.Store') <- call resetCounts (Vars.VarsC)
+
+    (POut.BodyVars) <- uncall variablesP (POut.Vars)
+    (Body.VarsIn) <- uncall variablesStmts (Body.BodyVars)
+    (PIn.'nil) <- uncall variablesP (PIn.VarsIn)
+
+    Table' ^= Table
+    return ((Table.Store).((PIn.(Body.POut)).(Table'.Store')))
 
 
 
@@ -320,72 +335,190 @@ procedure createEmptyEnv (Table.Store)
 
 // ----------------------------------------- Map functions ----------------------------------------------------------------
 
-procedure lookUnordered (Map.Key)
-    Map <- call debug Map
+procedure look (Map.Key)
     if Map = 'nil
     then skip
     else
         ((Key'.Val').Map) <- Map
         if Key' = Key
         then Val ^= Val'
-        else (Map.(Key.Val)) <- call lookUnordered (Map.Key)
+        else (Map.(Key.Val)) <- call look (Map.Key)
         fi Key' = Key
         Map <- ((Key'.Val').Map)
     fi Map = 'nil
-    Val <- call debug Val
-    Key <- call debug Key
     return (Map.(Key.Val))
 
-procedure look (Map.Key)
-    (Map.(Key.Value)) <- uncall insert (Map.Key)
-    Value' ^= Value
-    (Map.Key) <- call insert (Map.(Key.Value'))
-    return (Map.(Key.Value))
-
-//Assumes key is not already in map
-procedure insert (Map. (Key.Value))
-    //Maybe check here if key is already in (then value must be nil)
-    // Or enforce this invariant elsewhere?
-    // For instance if only using insert to modify map, then the invariant holds
-    // as we never insert with 'nil as value.
-    if Value = 'nil
-    then (IsIn.(Map.Key)) <- call isKey (Map.Key)
-    else
-        if Map = 'nil
-        then Key' ^= Key
-            Map <- ((Key'.Value).'nil)
-            (Map.Length) <- call length Map
-        else ((Key'.Value').Map) <- Map //Error here!!!!
-            if Key' < Key then
-                (Map.Key) <- call insert (Map. (Key.Value))
-            else
-                Map <- ((Key'.Value').Map)
-                (Key'.Value') <- (Key.Value)
-                Key ^= Key'
-            fi Key' < Key
-            Map <- ((Key'.Value').Map)
-            (Map.Length) <- call length Map
-        fi Length = '1
-        Map <- uncall length (Map.Length)
-        (IsIn.(Map.Key)) <- call isKey (Map.Key)
-    fi IsIn = 'nil
-    (Map.Key) <- uncall isKey (IsIn.(Map.Key))
-    return (Map.Key)
-
-
-procedure isKey (Map.Key)
+procedure get (Map.Key)
     if Map = 'nil
     then skip
     else
         ((Key'.Val').Map) <- Map
         if Key' = Key
-        then In ^= 'true
-        else (In.(Map.Key)) <- call isKey (Map.Key)
+        then Val <- Val'
+        else (Map.(Key.Val)) <- call get (Map.Key)
         fi Key' = Key
         Map <- ((Key'.Val').Map)
     fi Map = 'nil
-    return (In.(Map.Key))
+    return (Map.(Key.Val))
 
+// set is reverse of get
+
+procedure registerVars Vars
+    (Vars.VarsC) <- call registerVarsRec (Vars.'nil)
+    return (Vars.VarsC)
+
+procedure registerVarsRec (Vars.VarsC)
+    if Vars = 'nil
+    then skip
+    else (Var.Vars) <- Vars
+         (VarsC.Var) <- call register (VarsC.Var)
+         (Vars.VarsC) <- call registerVarsRec (Vars.VarsC)
+         Vars <- (Var.Vars)
+    fi Vars = 'nil
+    return (Vars.VarsC)
+
+
+
+procedure resetCounts (Vars.VarsC)
+    if Vars = 'nil
+    then skip
+    else (Var.Vars) <- Vars
+         (VarsC.Var) <- call decCount (VarsC.Var)
+         (Vars.VarsC) <- call resetCounts (Vars.VarsC)
+         Vars <- (Var.Vars)
+    fi Vars = 'nil
+    return (Vars.VarsC)
+
+// inserts variable into variable map, with value nil. If variable is already there, increment count.
+procedure register (Map.Var)
+    if Map = 'nil
+    then Var' ^= Var
+         Map <- ((Var'.'1).'nil)
+         B ^= 'true
+    else
+        ((Var'.C).Map) <- Map
+        if Var = Var'
+        then
+            C += '1
+        else
+            (Map.Var) <- call register (Map.Var)
+        fi Var = Var'
+        Map <- ((Var'.C).Map)
+    fi B
+    Map <- uncall isSingleVarSingleOccurence (Map.B)
+    return (Map.Var)
+
+// decrements count of variable in variable map. If count becomes 0, set value to 'nil
+procedure decCount (Map.Var)
+        ((Var'.C).Map) <- Map
+        if Var = Var'
+        then
+            C -= '1
+            if C = '0 then
+            C ^= '0
+            else skip
+            fi C = 'nil
+        else
+            (Map.Var) <- call decCount (Map.Var)
+        fi Var = Var'
+        Map <- ((Var'.C).Map)
+        return (Map.Var)
+
+procedure isSingleVarSingleOccurence Map
+    ((Var.C).Map) <- Map
+    if Map = 'nil && C = '1
+    then B ^= 'true
+    else skip
+    fi B = 'true
+    Map <- ((Var.C).Map)
+    return (Map.B)
+
+
+// ----------------------------------------- Variable parsers ---------------------------------------------------------------------
+
+procedure variablesP (P.Vars)
+    (Ptype.Pvalue) <- P
+    if Ptype = 'variable then
+        Var' ^= Pvalue
+       Vars <- (Var'.Vars)
+    else if Ptype = 'constant then skip
+    else if Ptype = 'pair then
+        (P1.P2) <- Pvalue
+        (P1.Vars) <- call variablesP (P1.Vars)
+        (P2.Vars) <- call variablesP (P2.Vars)
+        Pvalue <- (P1.P2)
+    else if Ptype = 'involuteS || Ptype = 'callS || Ptype = 'uncallS then
+        (Id.P) <- Pvalue
+        (P.Vars) <- call variablesP (P.Vars)
+        Pvalue <- (Id.P)
+    else Ptype ^= 'error //should never reach here
+    fi Ptype = 'involuteS || Ptype = 'callS || Ptype = 'uncallS
+    fi Ptype = 'pair
+    fi Ptype = 'constant
+    fi Ptype ='variable
+    P <- (Ptype.Pvalue)
+    return (P.Vars)
+
+procedure variablesStmts (Statements.Vars)
+    if Statements = 'nil
+    then skip
+    else
+        (Statement.Statements) <- Statements
+        (Statement.Vars) <- call variablesStmt (Statement.Vars)
+        (Statements.Vars) <- call variablesStmts (Statements.Vars)
+        Statements <- (Statement.Statements)
+    fi Statements = 'nil
+    return (Statements.Vars)
+
+procedure variablesStmt (Statement.Vars)
+    (Stype.Statement) <- Statement
+    if Stype = 'assign then
+        (Op.(Var.E)) <- Statement
+        Var' ^= Var
+        Vars <- (Var'.Vars)
+        (E.Vars) <- call variablesExp (E.Vars)
+        Statement <- (Op.(Var.E))
+    else if Stype = 'loopS || Stype = 'conditional then
+        (E1.(S1.(S2.E2))) <- Statement
+        (E1.Vars) <- call variablesExp (E1.Vars)
+        (S1.Vars) <- call variablesStmts (S1.Vars)
+        (S2.Vars) <- call variablesStmts (S2.Vars)
+        (E2.Vars) <- call variablesExp (E2.Vars)
+        Statement <- (E1.(S1.(S2.E2)))
+    else if Stype = 'replacement then
+        (P1.P2) <- Statement
+        (P1.Vars) <- call variablesP (P1.Vars)
+        (P2.Vars) <- call variablesP (P2.Vars)
+        Statement <- (P1.P2)
+
+    else if Stype = 'skipS then
+        skip
+    else skip //should not reach here!!
+    fi Stype = 'skipS
+    fi Stype = 'replacement
+    fi Stype = 'loopS || Stype = 'conditional
+    fi Stype = 'assign
+    Statement <- (Stype.Statement)
+
+    return (Statement.Vars)
+
+procedure variablesExp (E.Vars)
+   (Etype.E) <- E
+    if Etype = 'constant then skip
+    else if Etype = 'variable then
+        Var' ^= E
+        Vars <- (Var'.Vars)
+    else if Etype = 'operation then
+        (Op.(E1.E2)) <- E
+        (E1.Vars) <- call variablesExp (E1.Vars)
+        (E2.Vars) <- call variablesExp (E2.Vars)
+        E <- (Op.(E1.E2))
+    else skip // Should never reach here
+    fi Etype = 'operation
+    fi Etype = 'variable
+    fi Etype = 'constant
+    E <- (Etype.E)
+    return (E.Vars)
 // ------------------------------------- List operations -----------------------------------------------------------------
 
 
