@@ -129,7 +129,23 @@ procedure deconstruct (Env.(Pattern.Value))
         (Env.P2) <- call deconstruct (Env.(P2.C2))
         Pvalue <- (P1.P2)
     else if Ptype = 'involuteS then
-        (Id.P) <- Pvalue
+        (Env.Pvalue) <- call deconsInvolute (Env.(Pvalue.Value))
+
+    else if Ptype = 'callS then
+        (Env.Pvalue) <- call deconsCall (Env.(Pvalue.Value))
+    else if Ptype = 'uncallS then
+        (Env.Pvalue) <- call deconsUncall (Env.(Pvalue.Value))
+    else Ptype ^= 'error //should never reach here
+    fi Ptype = 'uncallS
+    fi Ptype = 'callS
+    fi Ptype = 'involuteS
+    fi Ptype = 'pair
+    fi Ptype = 'constant
+    fi Ptype ='variable
+    Pattern <- (Ptype.Pvalue)
+    return (Env.Pattern)
+
+procedure deconsInvolute (Env.((Id.P).V))
         (Env.(Id.('invol. (P'.Body)))) <- call lookInvol (Env.Id)
 
         // deconstruct value into empty env
@@ -145,21 +161,7 @@ procedure deconstruct (Env.(Pattern.Value))
 
         // deconstruct output into outer env
         (Env.P) <- call deconstruct (Env.(P.Output))
-        Pvalue <- (Id.P)
-
-    else if Ptype = 'callS then
-        (Env.Pvalue) <- call deconsCall (Env.(Pvalue.Value))
-    else if Ptype = 'uncallS then
-        (Env.Pvalue) <- call deconsUncall (Env.(Pvalue.Value))
-    else Ptype ^= 'error //should never reach here
-    fi Ptype = 'uncallS
-    fi Ptype = 'callS
-    fi Ptype = 'involuteS
-    fi Ptype = 'pair
-    fi Ptype = 'constant
-    fi Ptype ='variable
-    Pattern <- (Ptype.Pvalue)
-    return (Env.Pattern)
+        return (Env.(Id.P))
 
 
 procedure deconsUncall (Env.((Id.P).V))
@@ -193,11 +195,14 @@ procedure deconsCall (Env.((Id.P).V))
 
 
     (Env.P) <- call deconstruct (Env.(P.V))
-
-    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (PIn.(Body.POut)))))
+    (A.B) <- (Env.(Id.('proc. (PIn.(Body.POut))))) //Error here!!
+    A <- call debug A
+    B <- call debug B
+    call lookProc (Env.Id) <- (A.B)
     return (Env.(Id.P))
 
-
+procedure debug X
+    return X
 procedure applyRevOp (Op.(V1.V2))
     if Op = 'Xor then
         V1 ^= V2
@@ -316,6 +321,7 @@ procedure createEmptyEnv (Table.Store)
 // ----------------------------------------- Map functions ----------------------------------------------------------------
 
 procedure lookUnordered (Map.Key)
+    Map <- call debug Map
     if Map = 'nil
     then skip
     else
@@ -326,6 +332,8 @@ procedure lookUnordered (Map.Key)
         fi Key' = Key
         Map <- ((Key'.Val').Map)
     fi Map = 'nil
+    Val <- call debug Val
+    Key <- call debug Key
     return (Map.(Key.Val))
 
 procedure look (Map.Key)

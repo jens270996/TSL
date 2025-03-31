@@ -1,0 +1,8 @@
+involution id X
+uncall add5 X <- uncall add5 X
+skip
+
+
+procedure add5 X
+    X+='5
+    return X

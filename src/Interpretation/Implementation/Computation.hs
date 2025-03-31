@@ -96,7 +96,7 @@ throwC e = Computation (\cs trace (_,_) varStore -> Left $ printError cs trace v
 printCallStack :: CallStack -> String
 printCallStack cs = "[" ++ concat ((map (++ ",\n\n")) . reverse $ cs) ++ "]\n"
 printTrace :: Trace -> String
-printTrace t = "[" ++ concat ((map (++ ",\n")) . reverse $ t) ++ "]\n"
+printTrace t = "[" ++ concat ((map (++ ",\n\n")) . reverse $ t) ++ "]\n"
 
 printStore :: VariableStore -> String
 printStore = show

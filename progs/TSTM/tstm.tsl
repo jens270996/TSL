@@ -28,7 +28,7 @@ procedure RTM (Start.(End.(Rules.S_right)))
 
 // (S.(Q.Rules)) -> (R.(S.(Q.Rules)))
 procedure takeRule (S.(Q.Rules))
-    ((Q1.(S1.(S2.Q2))).Rules) <- Rules // ERROR HERE!!!
+    ((Q1.(S1.(S2.Q2))).Rules) <- Rules
 
     if (Q1 = Q && (S1 = 'move || S1 = S))
     then R' <- (Q1.(S1.(S2.Q2)))
