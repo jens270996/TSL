@@ -328,7 +328,7 @@ procedure lookUnordered (Map.Key)
         ((Key'.Val').Map) <- Map
         if Key' = Key
         then Val ^= Val'
-        else (Val.(Map.Key)) <- call lookUnordered (Map.Key)
+        else (Map.(Key.Val)) <- call lookUnordered (Map.Key)
         fi Key' = Key
         Map <- ((Key'.Val').Map)
     fi Map = 'nil
