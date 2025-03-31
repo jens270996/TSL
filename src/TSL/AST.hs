@@ -56,6 +56,16 @@ instance Show Constant where
     show (CPair c1 c2) = "(" ++ show c1 ++ "." ++ show c2 ++ ")"
     show (Atom a) = a
 
+showShort :: Constant -> String
+showShort (Integer i) = show i
+showShort Nil = "nil"
+showShort (CPair c1 c2) =
+    let s1 = showShort c1
+        s2 = showShort c2
+        s1' = if length s1 > 100 then take 10 s1 ++ "..." else s1
+        s2' = if length s2 > 100 then take 10 s2 ++ "..." else s2
+    in "(" ++ s1' ++ "." ++ s2' ++ ")"
+showShort (Atom a) = a
 
 data ReversibleOp =
     XorR

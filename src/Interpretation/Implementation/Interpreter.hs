@@ -79,7 +79,7 @@ construct (PConst c) = return c
 construct (Involute name p) =
     do c1 <- construct p
        when (name == "debug") (trace $ "RHS involute: " ++ name ++  " " ++ show p ++ "=" ++ show c1)
-       call $ "RHS involute: " ++ name ++ show p ++ "=" ++ show c1
+       call $ "RHS involute: " ++ name ++ show p ++ "=" ++ showShort c1
        involution <- getInvolution name
        Involution _ pIn _ <- getInvolution name
        oldEnv <- getEnvironment
@@ -94,7 +94,7 @@ construct (Call name p) =
     do c1 <- construct p
        (Procedure _ pIn s pOut) <- getProcedure name
        when (name == "debug") (trace $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c1)
-       call $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c1
+       call $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ showShort c1
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
        deconstruct pIn c1
@@ -107,7 +107,7 @@ construct (Uncall name p) =
     do c1 <- construct p
        (Procedure _ pIn s pOut) <- getProcedure name
        when (name == "debug") (trace $ "RHS uncall: " ++ name ++ " " ++ show p ++ "=" ++ show c1)
-       call $ "RHS uncall: "++ name ++ " " ++ show p ++ "=" ++ show c1
+       call $ "RHS uncall: "++ name ++ " " ++ show p ++ "=" ++ showShort c1
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
        deconstruct pOut c1
@@ -128,7 +128,7 @@ deconstruct (Involute name p) c =
        Involution _ pIn _ <- getInvolution name
        involution <- getInvolution name
        when (name == "debug") (trace $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ show c)
-       call $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ show c
+       call $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ showShort c
        deconstruct pIn c
        interpretInvolution involution
        c' <- construct pIn
@@ -140,7 +140,7 @@ deconstruct (Call name p) c =
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
        when (name == "debug") (trace $ "LHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c)
-       call $ "LHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ show c
+       call $ "LHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ showShort c
        deconstruct pOut c
        reverseInterpretStatements s
        c' <- construct pIn
@@ -152,7 +152,7 @@ deconstruct (Uncall name p) c =
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
        when (name == "debug") (trace $ "LHS uncall: " ++ name ++ " " ++ show p ++ "=" ++ show c)
-       call $ "LHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ show c
+       call $ "LHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ showShort c
        deconstruct pIn c
        interpretStatements s
        c' <- construct pOut
