@@ -148,17 +148,20 @@ procedure deconsInvolute (Env.((Id.P).V))
 
         // deconstruct value into empty env
         (Env.((P'.Body).InvolEnv)) <- call createEmptyEnvInvol (Env.(P'.Body))
-        (InvolEnv.P) <- call deconstruct (InvolEnv.(P.Value)) 
+        (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.V)) 
+
         (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
         
         // construct output value + env must be empty after
-        (InvolEnv.(P.Output)) <- uncall deconstruct (InvolEnv.P)
+        (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P') // Error here
+
         (Env.(P'.Body)) <- uncall createEmptyEnvInvol (Env.((P'.Body).InvolEnv))
 
         (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (P'.Body))))
 
         // deconstruct output into outer env
         (Env.P) <- call deconstruct (Env.(P.Output))
+
         return (Env.(Id.P))
 
 
