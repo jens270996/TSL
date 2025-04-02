@@ -1,0 +1,24 @@
+//Line : B -> y = x+B
+//Point : (X.Y)
+involution reflectPoint (Line.Point)
+    (X.Y) <- Point
+    B <- Line
+    Delta ^= '0
+    if (Y-B) - X > '0
+    then 
+        Delta += (Y-B) - X
+    else
+        Delta -= (Y-B) - X
+        Sign ^= 'true
+    fi (Y-B) - X > '0
+    if Sign
+    then skip
+    else X+=Delta
+         Y-=Delta
+    fi Sign
+    Sign ^= 'true
+
+    
+
+
+    

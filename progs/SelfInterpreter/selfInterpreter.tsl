@@ -197,8 +197,6 @@ procedure deconsCall (Env.((Id.P).V))
     call lookProc (Env.Id) <- (Env.(Id.('proc. (PIn.(Body.POut)))))
     return (Env.(Id.P))
 
-procedure debug X
-    return X
 procedure applyRevOp (Op.(V1.V2))
     if Op = 'Xor then
         V1 ^= V2

@@ -1,5 +1,0 @@
-'(
-(program.((invol.(id.((variable.1).((replacement.((uncallS.(add5.(variable.1))).(uncallS.(add5.(variable.1))))).((skipS.nil).nil))))).(nil.((proc.(add5.((variable.1).(((assign.(Add.(1.(constant.5)))).nil).(variable.1))))).nil))))
-.
-4
-)
