@@ -1,0 +1,6 @@
+'(proc.(main.
+    ((loopS.(E1.(((skipS.nil).nil).(((swap.(X2.X2)).nil).E2)))).
+    ((conditional.(E1.(((assignment.(X.(Add.E))).((callS.someFunc).nil)).(((skipS.nil).((skipS.nil).((swap.(X2.X2)).((skipS.nil).nil)))).E2)))).
+    ((callS.someFunc).
+    ((assignment.(X.(Add.E))).
+    nil))))))

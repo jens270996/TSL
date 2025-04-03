@@ -1,0 +1,106 @@
+involution invertProcedure Procedure
+    ('proc.(Name.Body)) <- Procedure
+    Body <- involute invertStatements Body
+
+
+//TODO: also need to reverse order
+involution invertStatements Ss
+    (Ss.Length) <- call length Ss
+
+    if Length > '1
+    then
+        (First.Ss) <- Ss
+        (Ss.Last) <- call unsnoc Ss
+        First <- involute invertStatement First
+        // Last will be inverted in reverse sweep
+    else skip
+    fi Length > '1
+
+    if Length > '1
+    then ((First.Last).Ss) <- ((Last.First). involute invertStatements Ss)
+    else skip
+    fi Length > '1
+
+
+involution invertStatement S
+    (SType.S) <- S
+
+    if SType = 'assignment then S <- involute invertAssignment S
+    else if SType = 'swap then S <- involute invertSwap S
+    else if SType = 'conditional then S <- involute invertLoopCond S
+    else if SType = 'loopS then S <- involute invertLoopCond S
+    else if SType = 'callS || SType ='uncallS then SType <- involute toggleApplication SType
+    else if SType = 'skipS then skip
+    else skip //Error should never reach here
+    fi SType = 'skipS
+    fi SType = 'callS || SType ='uncallS
+    fi SType = 'loopS
+    fi SType = 'conditional
+    fi SType = 'swap
+    fi SType = 'assignment
+
+
+involution toggleApplication S
+    if S = 'callS
+    then skip
+    else S ^= 'uncallS
+    fi S = 'callS
+    S ^= 'callS
+
+involution invertLoopCond S
+    (E1.(S1.(S2.E2))) <- S
+    (S1.(S2.(E1.E2))) <- (involute invertStatements S1.(involute invertStatements S2.(E2.E1)))
+
+involution invertSwap S
+    (X1.X2) <- S
+    (X1.X2) <- (X2.X1)
+
+involution invertAssignment S
+    (Var.(Op.Expr)) <- S
+    Op <- involute invertOp Op
+
+involution invertOp Op
+    if Op = 'Add || Op = 'Sub
+    then Op <- involute toggleAddSub Op
+    else skip
+    fi Op = 'Add || Op = 'Sub
+
+involution toggleAddSub Op
+    if Op = 'Add
+    then skip
+    else Op ^= 'Sub
+    fi Op = 'Add
+    Op ^= 'Add
+
+
+procedure length List
+    (List.C) <- call countRec (List.'0)
+    return (List.C)
+
+procedure countRec (List.C)
+    if List = 'nil
+    then skip
+    else C+='1
+         (Head.Tail) <- List
+         (Tail.C) <- call countRec (Tail.C)
+         List <- (Head.Tail)
+    fi List = 'nil
+    return (List.C)
+
+procedure unsnoc List
+    if List = 'nil
+    then skip
+    else
+        (List.C) <- call length List
+        if C = '1 then
+            (Last.'nil) <- List
+
+        else
+            (Head.Tail) <- List
+            (Init.Last) <- call unsnoc Tail
+            Init <- (Head.Init)
+        fi C = '1
+        C -= '1
+        Init <- uncall length (Init.C)
+    fi Last = 'nil && Init = 'nil
+    return (Init.Last)
