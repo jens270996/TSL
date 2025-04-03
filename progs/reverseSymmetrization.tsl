@@ -1,0 +1,13 @@
+involution reverse L
+    L' ^= L
+    L <- call reverseProc L
+    (L.L') <- (L'.L)
+
+procedure reverseProc L
+    from LRev = 'nil
+    do skip
+    loop
+        (Head.L) <- L
+        LRev <- (Head.LRev)
+    until L = 'nil
+    return LRev

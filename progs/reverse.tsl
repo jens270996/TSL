@@ -1,13 +1,47 @@
 involution reverse L
-    L' ^= L
-    L <- call reverseProc L
-    (L.L') <- (L'.L)
+(L.Length) <- call length L
 
-procedure reverseProc L
-    from LRev = 'nil
-    do skip
-    loop
-        (Head.L) <- L
-        LRev <- (Head.LRev)
-    until L = 'nil
-    return LRev
+if Length > '1
+then
+    (First.L) <- L
+    (L.Last) <- call unsnoc L
+else skip
+fi Length > '1
+
+if Length > '1
+then ((First.Last).L) <- ((Last.First). involute reverse L)
+else skip
+fi Length > '1
+  
+
+procedure length List
+    (List.C) <- call countRec (List.'0)
+    return (List.C)
+
+procedure countRec (List.C)
+    if List = 'nil
+    then skip
+    else C+='1
+         (Head.Tail) <- List
+         (Tail.C) <- call countRec (Tail.C)
+         List <- (Head.Tail)
+    fi List = 'nil
+    return (List.C)
+
+procedure unsnoc List
+    if List = 'nil
+    then skip
+    else
+        (List.C) <- call length List
+        if C = '1 then
+            (Last.'nil) <- List
+
+        else
+            (Head.Tail) <- List
+            (Init.Last) <- call unsnoc Tail
+            Init <- (Head.Init)
+        fi C = '1
+        C -= '1
+        Init <- uncall length (Init.C)
+    fi Last = 'nil && Init = 'nil
+    return (Init.Last)
