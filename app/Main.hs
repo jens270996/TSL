@@ -8,6 +8,8 @@ import Options.Applicative
 import System.Exit (die)
 import Interpretation.Interpreter
 import ASTPrinting.Printer (printProgram)
+import TSL.AST
+import Wellformedness.Wellformed
 
 data Options = Interpret InterpretOptions | Convert ConvertOptions | Pair PairOptions
 
@@ -109,10 +111,17 @@ interpretMain InterpretOptions { programFile=programPath, inputFile=inputPath, v
      trace v "\n"
      trace v $ "Input: " ++ show input
      trace v "\n"
-     (case interpretProgram program input of Right c -> putStrLn $ "Output: " ++ show c; Left e -> putStr $ "Error: " ++ e)
+     runProgram program input
 
 
 
+runProgram :: Program -> Constant -> IO ()
+runProgram program input =
+  case wellformedProgram program of
+      Nothing -> case interpretProgram program input of
+                    Right c -> putStrLn $ "Output: " ++ show c
+                    Left e -> putStrLn $ "Error during evaluation: " ++ e
+      Just e -> putStrLn $ "Program is not wellformed: " ++ e
 
 parseFile :: Bool -> (String -> ErrorMonad a) -> String ->  IO a
 parseFile v parser file =

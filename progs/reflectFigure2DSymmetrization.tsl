@@ -1,0 +1,81 @@
+//Line : B -> y = x+B
+//Point : (X.Y)
+involution reflectFigure (Line.Figure)
+    
+    (Line.(Figure.(Deltas.Sign))) <- call getDeltas (Line.Figure)
+
+    if Sign ='negative
+    then skip
+    else (Figure.Deltas) <- call mapReflect (Figure.Deltas)
+    fi Sign = 'negative
+
+    Sign <- involute toggleSign Sign
+
+
+procedure getDeltas (Line.Figure)
+    if Figure = 'nil
+    then skip
+    else (Point.Figure) <- Figure
+         (X.Y) <- Point
+         if (Y-Line) - X > '0
+         then Sign ^= 'positive
+         else Sign^= 'negative
+         fi Sign = 'positive
+         Point <- (X.Y)
+         Figure <- (Point.Figure)
+         (Line.(Figure.(Deltas.Sign))) <- call getDeltasRec (Line.(Figure.Sign))
+    fi Figure = 'nil
+    return (Line.(Figure.(Deltas.Sign)))
+
+procedure getDeltasRec (Line.(Figure.Sign))
+    if Figure = 'nil
+    then skip
+    else (Point.Figure) <- Figure
+         (X.Y) <- Point
+         Delta ^= '0
+         if (Y-Line) - X > '0
+         then 
+            Delta += (Y-Line) - X
+            Sign <- uncall dublicate (Sign.'positive)
+
+
+         else
+            Delta -= (Y-Line) - X
+            Sign <- uncall dublicate (Sign.'negative)
+         fi (Y-Line) - X > '0
+        Point <- (X.Y)
+
+        (Line.(Figure.(Deltas.Sign))) <- call getDeltasRec (Line.(Figure.Sign))
+
+        Deltas <- (Delta.Deltas)
+        Figure <- (Point.Figure)
+    fi Figure = 'nil
+    return (Line.(Figure.(Deltas.Sign)))
+
+procedure mapReflect (Figure.Deltas)
+    if Figure = 'nil
+    then skip
+    else
+        (Delta.Deltas) <- Deltas
+        (Point.Figure) <- Figure
+        (X.Y) <- Point
+        X+=Delta
+        Y-=Delta
+        (Figure.Deltas) <- call mapReflect (Figure.Deltas)
+        Point <- (X.Y)
+        Figure <- (Point.Figure)
+        Deltas <- (Delta.Deltas)
+    fi Figure ='nil
+    return (Figure.Deltas)
+
+involution toggleSign Sign
+    if Sign = 'positive
+    then skip
+    else Sign ^= 'negative
+    fi Sign = 'positive
+    Sign ^= 'positive
+
+procedure dublicate X
+
+    X' ^= X
+    return (X.X')

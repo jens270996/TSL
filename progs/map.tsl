@@ -1,14 +1,15 @@
 
 //Maps involution f to all elements of List
 involution map List
-    if List = 'nil
-    then skip
-    else NonEmpty ^= 'true
+    if List != 'nil
+    then NonEmpty ^= 'true
          (Head.Tail) <- List
+    else skip
     fi NonEmpty
+    
     if NonEmpty
-    then skip
-    else (Head.Tail) <- (involute f Head. involute map Tail)
+    then (Head.Tail) <- (involute f Head. involute map Tail)
+    else skip
     fi NonEmpty
 involution f X
     X <- X
