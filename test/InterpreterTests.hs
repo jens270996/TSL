@@ -10,13 +10,13 @@ import qualified Data.Map as Map
 
 interpretSuccessfully :: (Eq a, Show a, Eq b,Show b) => Interpreter a b -> TestName -> a -> FunctionStore -> VariableStore -> b -> VariableStore -> TestTree
 interpretSuccessfully interpreter name input funStoreIn varStoreIn out expectedStore =
-    testCase name $  case runComputation (interpreter input) [] funStoreIn varStoreIn of
-                      Right (out',store,_) -> (out',store) @?= (out,expectedStore)
+    testCase name $  case runComputation (interpreter input) [] [] funStoreIn varStoreIn of
+                      Right (out',store,_,_) -> (out',store) @?= (out,expectedStore)
                       Left _ -> assertFailure "Expected computation to succeed"
 
 interpretFail :: (Eq a, Show a, Eq b,Show b) => Interpreter a b -> TestName -> a -> FunctionStore -> VariableStore -> TestTree
 interpretFail interpreter name input funStoreIn varStoreIn =
-    testCase name $  case runComputation (interpreter input) [] funStoreIn varStoreIn of
+    testCase name $  case runComputation (interpreter input) [] [] funStoreIn varStoreIn of
                         Left _ -> return ()
                         Right e -> assertFailure $ "Failed to assert that interpretation of input throws , got successful evaluation: " ++ show e
 

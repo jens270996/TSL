@@ -34,6 +34,8 @@ wellformedSymmetricStatement s =
     case s of
         (Assign XorR _ _) -> Nothing
         (Replacement p1 p2) -> wellformedSymmetricReplacement (Replacement p1 p2) 
+        (Conditional e1 [s1] [s2] e2) | e1 == e2 ->
+            wellformedSymmetricStatement s1 >> wellformedSymmetricStatement s2
         Skip -> Nothing
         _ -> Just "Invalid statement type for symmetric statement"
 

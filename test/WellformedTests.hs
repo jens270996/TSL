@@ -68,7 +68,8 @@ symmetricStatementTests =
         , symmetricStatementNegativeTest "Reversible assignment" (Assign AddR "x" (EVar "y"))
         , symmetricStatementPositiveTest "Skip" (Skip)
         , symmetricStatementNegativeTest "Loop statement" (Loop (EVar "y") [] [] (EVar "y"))
-        , symmetricStatementNegativeTest "Conditional statement" (Conditional (EVar "y") [] [] (EVar "y"))
+        , symmetricStatementNegativeTest "Non-symmetric Conditional statement" (Conditional (EVar "y") [Skip] [Skip] (EVar "x"))
+        , symmetricStatementPositiveTest "Symmetric Conditional statement" (Conditional (EVar "y") [Skip] [Assign XorR "x" (EVar "y")] (EVar "y"))
         ]
         where
             symmetricStatementPositiveTest = testPositive wellformedSymmetricStatement
