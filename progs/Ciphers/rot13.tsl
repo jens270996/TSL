@@ -1,0 +1,15 @@
+
+
+// Letter as number (0-25) (latin alphabet)
+involution rot13 Letter
+    if Letter < '13
+    then Sign^='true
+    else skip
+    fi Letter < '13
+
+    if Sign then
+        Letter += '13
+    else skip
+    fi Sign
+    
+    Sign ^= 'true
