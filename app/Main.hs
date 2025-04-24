@@ -7,7 +7,7 @@ import Control.Monad
 import Options.Applicative
 import System.Exit (die)
 import Interpretation.Interpreter
-import ASTPrinting.Printer (printProgram)
+import ASTPrinting.Printer (printProgram, printProgramOrdered)
 import TSL.AST
 import Wellformedness.Wellformed
 
@@ -23,6 +23,7 @@ data ConvertOptions = ConvertOptions
   {
     sourceFile :: String
   , destinationFile :: String
+  , ordered :: Bool
   , verboseC :: Bool
   }
 data PairOptions = PairOptions
@@ -47,6 +48,9 @@ convertParser :: Parser Options
 convertParser = Convert <$> (ConvertOptions
                <$> argument str (metavar "<Program file>")
                <*> argument str (metavar "<Destination file>")
+               <*> flag True False (long "ordered"
+                           <> short 'o'
+                           <> help "If true, use integer encoding of variables.")
                <*> flag True False (long "verbose"
                            <> short 'v'
                            <> help "Print additional information for debugging purposes.")
@@ -95,9 +99,9 @@ pairMain PairOptions {in1=path1, in2=path2 , out=pathOut, verboseP=v} =
      writeFile pathOut ("'(\n" ++ (tail . removeLeadingWhitespace $ input1) ++ "\n.\n" ++ (tail . removeLeadingWhitespace $ input2) ++ "\n)")
 
 convertMain :: ConvertOptions -> IO ()
-convertMain ConvertOptions {sourceFile=inputPath, destinationFile=outputPath, verboseC=v} =
+convertMain ConvertOptions {sourceFile=inputPath, destinationFile=outputPath, verboseC=v, ordered=o} =
   do program <- parseFile v parseProgram inputPath
-     writeFile outputPath (printProgram program)
+     writeFile outputPath (if o then (printProgramOrdered program) else (printProgram program))
 
 
 interpretMain:: InterpretOptions -> IO()

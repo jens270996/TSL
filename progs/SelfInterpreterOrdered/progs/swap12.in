@@ -1,0 +1,5 @@
+'(
+(program.((invol.(swap.((pair.((variable.1).(variable.2))).((replacement.((pair.((variable.2).(variable.1))).(pair.((variable.1).(variable.2))))).nil)))).(nil.nil)))
+.
+(1.2)
+)
