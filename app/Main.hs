@@ -48,7 +48,7 @@ convertParser :: Parser Options
 convertParser = Convert <$> (ConvertOptions
                <$> argument str (metavar "<Program file>")
                <*> argument str (metavar "<Destination file>")
-               <*> flag True False (long "ordered"
+               <*> flag False True (long "ordered"
                            <> short 'o'
                            <> help "If true, use integer encoding of variables.")
                <*> flag True False (long "verbose"
