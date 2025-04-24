@@ -1,0 +1,401 @@
+
+involution selfInterpreter (Program.Input)
+    ('program.(Main . (Invols . Procs))) <- Program
+    ('invol. (Id. (P. Body))) <- Main
+    Table <- call createTable (Invols.Procs)
+    ((Table.'nil).Env) <- call createEmptyEnv (Table.'nil)
+    (Env.P) <- call deconstruct (Env.(P.Input))
+    (Env.Body) <- involute interpretInvolutionBody (Env.Body)
+
+
+// ------------------------------- Interpreters ------------------------------------------------------------------------
+involution interpretInvolutionBody (Env.Body)
+    (Table.Store) <- Env
+    Env <- (Table.Store)
+    (Init.Last) <- call unsnoc Body
+    (Env.Init) <- call interpretStatements (Env.Init)
+    (Env.Last) <- involute interpretSymmetricStatement (Env.Last)
+
+
+procedure interpretStatements (Env.Statements)
+    if Statements = 'nil
+    then skip
+    else
+        (Statement.Statements) <- Statements
+        (Env.Statement) <- call interpretStatement (Env.Statement)
+        (Env.Statements) <- call interpretStatements (Env.Statements)
+        Statements <- (Statement.Statements)
+    fi Statements = 'nil
+    return (Env.Statements)
+
+procedure interpretStatement (Env.Statement)
+    (Stype.Statement) <- Statement
+    if Stype = 'assign then
+        (Op.(Var.E)) <- Statement
+        (Env.(E.V2)) <- call interpretExpression (Env.E)
+        (Env.(Var.V1)) <- call getVar (Env.Var)
+        (Op.(V.V2)) <- call applyRevOp (Op.(V1.V2))
+        (Env.Var) <- uncall getVar (Env.(Var.V))
+        (Env.E) <- uncall interpretExpression (Env.(E.V2))
+        Statement <- (Op.(Var.E))
+    else if Stype = 'loopS then
+        (E1.(S1.(S2.E2))) <- Statement
+        (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        from B1
+        do
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S1) <- call interpretStatements (Env.S1)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        loop
+            (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+            (Env.S2) <- call interpretStatements (Env.S2)
+            (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        until B2
+        (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+        Statement <- (E1.(S1.(S2.E2)))
+
+    else if Stype = 'conditional then
+        (E1.(S1.(S2.E2))) <- Statement
+        (Env.(E1.B1)) <- call interpretExpression (Env.E1)
+        if B1 then
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S1) <- call interpretStatements (Env.S1)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        else
+            (Env.E1) <- uncall interpretExpression (Env.(E1.B1))
+            (Env.S2) <- call interpretStatements (Env.S2)
+            (Env.(E2.B2)) <- call interpretExpression (Env.E2)
+        fi B2
+        (Env.E2) <- uncall interpretExpression (Env.(E2.B2))
+        Statement <- (E1.(S1.(S2.E2)))
+
+    else if Stype = 'replacement then
+        (P1.P2) <- Statement
+        (Env.(P2.V)) <- uncall deconstruct (Env.P2)
+        (Env.P1) <- call deconstruct (Env.(P1.V))
+        Statement <- (P1.P2)
+
+    else if Stype = 'skipS then
+        skip
+    else skip //should not reach here!!
+    fi Stype = 'skipS
+    fi Stype = 'replacement
+    fi Stype = 'conditional
+    fi Stype = 'loopS
+    fi Stype = 'assign
+    Statement <- (Stype.Statement)
+
+    return (Env.Statement)
+
+involution interpretSymmetricStatement (Env. Statement)
+    Env' ^= Env
+    (Env. Statement) <- call interpretStatement (Env. Statement)
+    (Env.Env') <- (Env'.Env)
+
+procedure interpretExpression (Env.E)
+    (Etype.E) <- E
+    if Etype = 'constant then
+        V^=E
+    else if Etype = 'variable then
+        (Env.(E.V)) <- call lookVar (Env.E)
+    else if Etype = 'operation then
+        (Op.(E1.E2)) <- E
+        (Env.(E1.V1)) <- call interpretExpression (Env.E1)
+        (Env.(E2.V2)) <- call interpretExpression (Env.E2)
+        (Op.(V1.(V2.V))) <- call applyOp (Op.(V1.V2))
+        (Env.E1) <- uncall interpretExpression (Env.(E1.V1)) 
+        (Env.E2) <- uncall interpretExpression (Env.(E2.V2))
+        E <- (Op.(E1.E2))
+    else skip // Should never reach here
+    fi Etype = 'operation
+    fi Etype = 'variable
+    fi Etype = 'constant
+    E <- (Etype.E)
+    return (Env.(E.V))
+
+// -------------------------------- Auxillary procedures -----------------------------------------------------------------
+
+procedure deconstruct (Env.(Pattern.Value))
+    (Ptype.Pvalue) <- Pattern
+    if Ptype = 'variable then
+       (Env.Pvalue) <- uncall getVar (Env.(Pvalue.Value))
+    else if Ptype = 'constant && Pvalue = Value then Value ^= Pvalue
+    else if Ptype = 'pair then
+        (P1.P2) <- Pvalue
+        (C1.C2) <- Value
+        (Env.P1) <- call deconstruct (Env.(P1.C1))
+        (Env.P2) <- call deconstruct (Env.(P2.C2))
+        Pvalue <- (P1.P2)
+    else if Ptype = 'involuteS then
+        (Env.Pvalue) <- call deconsInvolute (Env.(Pvalue.Value))
+
+    else if Ptype = 'callS then
+        (Env.Pvalue) <- call deconsCall (Env.(Pvalue.Value))
+    else if Ptype = 'uncallS then
+        (Env.Pvalue) <- call deconsUncall (Env.(Pvalue.Value))
+    else Ptype ^= 'error //should never reach here
+    fi Ptype = 'uncallS
+    fi Ptype = 'callS
+    fi Ptype = 'involuteS
+    fi Ptype = 'pair
+    fi Ptype = 'constant
+    fi Ptype ='variable
+    Pattern <- (Ptype.Pvalue)
+    return (Env.Pattern)
+
+procedure deconsInvolute (Env.((Id.P).V))
+        (Env.(Id.('invol. (P'.Body)))) <- call lookInvol (Env.Id)
+
+        // deconstruct value into empty env
+        (Env.InvolEnv) <- call createEmptyEnv Env
+        (InvolEnv.P') <- call deconstruct (InvolEnv.(P'.V)) 
+
+        (InvolEnv.Body) <- involute interpretInvolutionBody (InvolEnv.Body)
+        
+        // construct output value + env must be empty after
+        (InvolEnv.(P'.Output)) <- uncall deconstruct (InvolEnv.P') // Error here
+        Env <- uncall createEmptyEnv (Env.InvolEnv)
+        (Env.Id) <- uncall lookInvol (Env.(Id.('invol. (P'.Body))))
+
+        // deconstruct output into outer env
+        (Env.P) <- call deconstruct (Env.(P.Output))
+
+        return (Env.(Id.P))
+
+
+procedure deconsUncall (Env.((Id.P).V))
+
+    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+    (Env.ProcEnv) <- call createEmptyEnv Env
+
+    (ProcEnv.PIn) <- call deconstruct (ProcEnv.(PIn.V))
+    (ProcEnv.Body) <- call interpretStatements (ProcEnv.Body)
+
+    (ProcEnv.(POut.V))<- uncall deconstruct (ProcEnv.POut)
+    Env <- uncall createEmptyEnv (Env.ProcEnv)
+
+    (Env.P) <- call deconstruct (Env.(P.V))
+
+    (Env.Id) <- uncall lookProc (Env.(Id.('proc. (PIn.(Body.POut)))))
+    return (Env.(Id.P))
+
+
+procedure deconsCall (Env.((Id.P).V))
+
+    (Env.(Id.('proc. (PIn.(Body.POut))))) <- call lookProc (Env.Id)
+    (Env.ProcEnv) <- call createEmptyEnv Env
+
+    (ProcEnv.POut) <- call deconstruct (ProcEnv.(POut.V))
+    (ProcEnv.Body) <- uncall interpretStatements (ProcEnv.Body)
+    (ProcEnv.(PIn.V))<- uncall deconstruct (ProcEnv.PIn)
+
+    Env <- uncall createEmptyEnv (Env.ProcEnv)
+
+    (Env.P) <- call deconstruct (Env.(P.V))
+    call lookProc (Env.Id) <- (Env.(Id.('proc. (PIn.(Body.POut)))))
+    return (Env.(Id.P))
+
+procedure applyRevOp (Op.(V1.V2))
+    if Op = 'Xor then
+        V1 ^= V2
+    else if Op = 'Add then
+        V1 += V2
+    else if Op = 'Sub then
+        V1 -= V2
+    else skip //Should never reach here
+    fi Op = 'Sub
+    fi Op = 'Add
+    fi Op = 'Xor
+    return (Op.(V1.V2))
+
+procedure applyOp (Op.(V1.V2))
+    if Op = 'Xor then
+    else if Op = 'Add then
+        V ^= V1 + V2
+    else if Op = 'Sub then
+        V ^= V1 - V2
+    else if Op = 'Mult then
+        V ^= V1 * V2
+    else if Op = 'Div then
+        V ^= V1 / V2
+    else if Op = 'Mod then
+        V ^= V1 % V2
+    else if Op = 'And then
+        V ^= V1 && V2
+    else if Op = 'Or then
+        V ^= V1 || V2
+    else if Op = 'Gt then
+        V ^= V1 > V2
+    else if Op = 'Eq then
+        V ^= V1 = V2
+    else if Op = 'Lt then
+        V ^= V1 < V2
+    else if Op = 'GtEq then
+        V ^= V1 >= V2
+    else if Op = 'LtEq then
+        V ^= V1 <= V2
+    else if Op = 'Neq then
+        V ^= V1 != V2
+    else skip // Should never reach here
+    fi Op = 'Neq
+    fi Op = 'LtEq
+    fi Op = 'GtEq
+    fi Op = 'Lt
+    fi Op = 'Eq
+    fi Op = 'Gt
+    fi Op = 'Or
+    fi Op = 'And
+    fi Op = 'Mod
+    fi Op = 'Div
+    fi Op = 'Mult
+    fi Op = 'Sub
+    fi Op = 'Add
+    fi Op = 'Xor
+    return (Op.(V1.(V2.V)))
+
+// ----------------------------------------- Environment auxillary functions -----------------------------------------------
+// Environment = (Table.Store)
+// Table = (Invols.Procs)
+// Store = Map Var (CountOccurences.Value)
+// Invols = Map Id involution
+// Procs = Map Id procedure
+
+procedure lookVar ((Table.Store).Var)
+    (Store.KVPair) <- call look (Store.Var)
+    return ((Table.Store).KVPair)
+
+procedure getVar ((Table.Store).Key)
+    (Store.KVPair) <- uncall insert (Store.Key)
+    return ((Table.Store).KVPair)
+
+procedure lookInvol (((Invols.Procs).Store).Id)
+    (Invols.KVPair) <- call look (Invols.Id)
+    return (((Invols.Procs).Store).KVPair)
+
+procedure lookProc (((Invols.Procs).Store).Id)
+    (Procs.KVPair) <- call look (Procs.Id)
+    return (((Invols.Procs).Store).KVPair)
+
+procedure createTable (Invols.Procs)
+    InvolTable <- call createInvolTable Invols
+    ProcTable <- call createProcTable Procs
+    return (InvolTable.ProcTable)
+
+procedure createInvolTable Invols
+    if Invols = 'nil then skip
+    else
+        (Invol.Invols) <- Invols
+        ('invol. (Id.Invol)) <- Invol
+        InvolTable <- call createInvolTable Invols
+        InvolTable <- ((Id.('invol.Invol)).InvolTable)
+    fi InvolTable = 'nil
+    return InvolTable
+
+procedure createProcTable Procs
+    if Procs = 'nil then skip
+    else
+        (Proc.Procs) <- Procs
+        ('proc. (Id.Proc)) <- Proc
+        ProcTable <- call createProcTable Procs
+        ProcTable <- ((Id.('proc. Proc)).ProcTable)
+    fi ProcTable = 'nil
+    return ProcTable
+
+procedure createEmptyEnv (Table.Store)
+    Table' ^= Table
+    return ((Table.Store).(Table'.'nil))
+
+
+// ----------------------------------------- Map functions ----------------------------------------------------------------
+
+procedure look (Map.Key)
+    if Map = 'nil
+    then skip
+    else
+        ((Key'.Val').Map) <- Map
+        if Key' = Key
+        then Val ^= Val'
+        else (Map.(Key.Val)) <- call look (Map.Key)
+        fi Key' = Key
+        Map <- ((Key'.Val').Map)
+    fi Map = 'nil
+    return (Map.(Key.Val))
+
+
+//Assumes key is not already in map
+procedure insert (Map. (Key.Value))
+    if Value = 'nil
+    then (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    else
+        if Map = 'nil
+        then Key' ^= Key
+            Map <- ((Key'.Value).'nil)
+            (Map.Length) <- call length Map
+        else ((Key'.Value').Map) <- Map //Error here!!!!
+            if Key' < Key then
+                (Map.Key) <- call insert (Map. (Key.Value))
+            else
+                Map <- ((Key'.Value').Map)
+                (Key'.Value') <- (Key.Value)
+                Key ^= Key'
+            fi Key' < Key
+            Map <- ((Key'.Value').Map)
+            (Map.Length) <- call length Map
+        fi Length = '1
+        Map <- uncall length (Map.Length)
+        (IsIn.(Map.Key)) <- call isKey (Map.Key)
+    fi IsIn = 'nil
+    (Map.Key) <- uncall isKey (IsIn.(Map.Key))
+    return (Map.Key)
+
+// get is inverse of insert
+
+procedure isKey (Map.Key)
+    if Map = 'nil
+    then skip
+    else
+        ((Key'.Val').Map) <- Map
+        if Key' = Key
+        then In ^= 'true
+        else (In.(Map.Key)) <- call isKey (Map.Key)
+        fi Key' = Key
+        Map <- ((Key'.Val').Map)
+    fi Map = 'nil
+    return (In.(Map.Key))
+
+// ------------------------------------- List operations -----------------------------------------------------------------
+
+
+procedure length List
+    (List.C) <- call countRec (List.'0)
+    return (List.C)
+
+procedure countRec (List.C)
+    if List = 'nil
+    then skip
+    else C+='1
+         (Head.Tail) <- List
+         (Tail.C) <- call countRec (Tail.C)
+         List <- (Head.Tail)
+    fi List = 'nil
+    return (List.C)
+
+
+procedure unsnoc List
+    if List = 'nil
+    then skip
+    else
+        (List.C) <- call length List
+        if C = '1 then
+            (Last.'nil) <- List
+
+        else
+            (Head.Tail) <- List
+            (Init.Last) <- call unsnoc Tail
+            Init <- (Head.Init)
+        fi C = '1
+        C -= '1
+        Init <- uncall length (Init.C)
+    fi Last = 'nil && Init = 'nil
+    return (Init.Last)
+
