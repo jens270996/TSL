@@ -11,7 +11,6 @@ type VariableStore = Map.Map Variable Constant
 type ProcedureStore = Map.Map Identifier Procedure
 type InvolutionStore = Map.Map Identifier Involution
 type FunctionStore = (ProcedureStore,InvolutionStore)
-type Trace = [String]
 type CallStack = [String]
 
 emptyVariableStore :: VariableStore
@@ -27,10 +26,9 @@ constructInitialStores p =
 newtype Computation a = Computation
     { runComputation ::
         CallStack ->
-        Trace ->
         FunctionStore ->
         VariableStore ->
-        ErrorMonad (a,VariableStore,Trace,CallStack)
+        ErrorMonad (a,VariableStore,CallStack)
     }
 
 
@@ -39,39 +37,39 @@ instance Functor Computation where
 
 instance Applicative Computation where
     pure :: a -> Computation a
-    pure a = Computation (\cs trace _ vars -> return (a, vars,trace,cs))
+    pure a = Computation (\cs _ vars -> return (a, vars,cs))
     (<*>) = ap
 
 instance Monad Computation where
     m >>= f =
-        let transferFunction cs trace funcs vars =
-                do (a, vars',trace',cs') <- runComputation m cs trace funcs vars
+        let transferFunction cs funcs vars =
+                do (a, vars',cs') <- runComputation m cs funcs vars
                    let result = f a
-                   runComputation result cs' trace' funcs vars'
+                   runComputation result cs' funcs vars'
         in Computation transferFunction
 
 
 getInvolutionC :: Identifier -> Computation Involution
-getInvolutionC id = Computation (\cs trace (_,invols) vars -> case Map.lookup id invols of
-                                                        Just invol -> Right (invol, vars,trace,cs)
+getInvolutionC id = Computation (\cs (_,invols) vars -> case Map.lookup id invols of
+                                                        Just invol -> Right (invol, vars,cs)
                                                         Nothing -> Left $ "Trying to lookup undeclared involution: " ++ id
                                 )
 getProcedureC :: Identifier -> Computation Procedure
-getProcedureC id = Computation (\cs trace (procs,_) vars -> case Map.lookup id procs of
-                                                        Just procedure -> Right (procedure, vars,trace,cs)
+getProcedureC id = Computation (\cs (procs,_) vars -> case Map.lookup id procs of
+                                                        Just procedure -> Right (procedure, vars,cs)
                                                         Nothing -> Left $ "Trying to lookup undeclared procedure: " ++ id
                                 )
 lookC :: Variable -> Computation Constant
-lookC var = Computation (\cs trace (_,_) vars -> case Map.lookup var vars of
-                                                        Just c -> Right (c, vars,trace,cs)
-                                                        Nothing -> Right (Nil, vars,trace,cs)
+lookC var = Computation (\cs (_,_) vars -> case Map.lookup var vars of
+                                                        Just c -> Right (c, vars,cs)
+                                                        Nothing -> Right (Nil, vars,cs)
                          )
 setC :: Variable -> Constant -> Computation ()
-setC var c = Computation (\cs trace (_,_) vars -> case c of
-                                            Nil -> Right ((), Map.delete var vars,trace,cs)
+setC var c = Computation (\cs (_,_) vars -> case c of
+                                            Nil -> Right ((), Map.delete var vars,cs)
                                             _ -> case Map.lookup var vars of
                                                     Just _ -> Left $ "Trying to perform destructive assignment of variable: " ++ var
-                                                    _ ->      Right ((),Map.insert var c vars,trace,cs))
+                                                    _ ->      Right ((),Map.insert var c vars,cs))
 
 getC :: Variable -> Computation Constant
 getC var = do c <- lookC var
@@ -79,48 +77,44 @@ getC var = do c <- lookC var
               return c
 
 resetC :: Variable -> Computation ()
-resetC var = Computation (\cs trace (_,_) vars -> Right ((),Map.delete var vars,trace,cs))
+resetC var = Computation (\cs (_,_) vars -> Right ((),Map.delete var vars,cs))
 
 overrideC :: Variable -> Constant -> Computation ()
-overrideC var c = Computation (\cs trace (_,_) vars -> case c of
-                                            Nil -> Right ((), Map.delete var vars,trace,cs)
-                                            _ -> Right ((),Map.insert var c vars,trace,cs))
+overrideC var c = Computation (\cs (_,_) vars -> case c of
+                                            Nil -> Right ((), Map.delete var vars,cs)
+                                            _ -> Right ((),Map.insert var c vars,cs))
 
-printError :: CallStack -> Trace -> VariableStore -> String -> String
-printError cs t v s =
-    "Environment contained: \n"++ printStore v ++ "\nTrace contained: \n"++ printTrace t ++ "\nCallstack contained: \n"++ printCallStack cs ++ "\nCaught error: " ++ s  ++ "\n"
+printError :: CallStack -> VariableStore -> String -> String
+printError cs v s =
+    "Environment contained: \n"++ printStore v ++ "\nCallstack contained: \n"++ printCallStack cs ++ "\nCaught error: " ++ s  ++ "\n"
 
 throwC :: String -> Computation ()
-throwC e = Computation (\cs trace (_,_) varStore -> Left $ printError cs trace varStore e )
+throwC e = Computation (\cs (_,_) varStore -> Left $ printError cs varStore e )
 
 printCallStack :: CallStack -> String
 printCallStack cs = "[" ++ (concatMap (++ ",\n\n") . reverse $ cs) ++ "]\n"
-printTrace :: Trace -> String
-printTrace t = "[" ++ concat ((map (++ ",\n\n")) . reverse $ t) ++ "]\n"
 
 printStore :: VariableStore -> String
 printStore = show
 
 
 assertEnvironmentEmptyC :: Computation ()
-assertEnvironmentEmptyC = Computation (\cs trace _ vars -> if vars == Map.empty
-                                                        then Right ((),vars,trace,cs)
-                                                        else Left $ printError cs trace vars
+assertEnvironmentEmptyC = Computation (\cs _ vars -> if vars == Map.empty
+                                                        then Right ((),vars,cs)
+                                                        else Left $ printError cs vars
                                                                 "Environment must be empty at return from function.")
 
 getEnvironmentC :: Computation VariableStore
-getEnvironmentC = Computation (\cs trace _ vars -> Right (vars,vars,trace,cs))
+getEnvironmentC = Computation (\cs _ vars -> Right (vars,vars,cs))
 
 withEnvironmentC :: VariableStore -> Computation ()
-withEnvironmentC vars = Computation (\cs trace _ _ -> Right ((),vars,trace,cs))
+withEnvironmentC vars = Computation (\cs _ _ -> Right ((),vars,cs))
 
-traceC :: String -> Computation ()
-traceC s = Computation (\cs trace _ vars -> Right ((),vars,(s:trace),cs))
 
 callC :: String -> Computation ()
-callC s = Computation (\cs trace _ vars -> Right ((),vars,trace,s:cs))
+callC s = Computation (\cs _ vars -> Right ((),vars,s:cs))
 returnC :: Computation ()
-returnC = Computation (\cs trace _ vars -> Right ((),vars,trace,tail cs))
+returnC = Computation (\cs _ vars -> Right ((),vars,tail cs))
 
 -- The class of monads that support the core RWS operations
 class Monad cm => ComputationMonad cm where
@@ -141,7 +135,6 @@ class Monad cm => ComputationMonad cm where
   getInvolution :: Identifier -> cm Involution
   getEnvironment :: cm VariableStore
   withEnvironment :: VariableStore -> cm ()
-  trace :: String -> cm ()
   call :: String -> cm ()
   exit :: cm()
   -- Throw an error
@@ -158,6 +151,5 @@ instance ComputationMonad Computation where
     withEnvironment = withEnvironmentC
     getEnvironment = getEnvironmentC
     override = overrideC
-    trace = traceC
     call = callC
     exit =assertEnvironmentEmptyC >> returnC

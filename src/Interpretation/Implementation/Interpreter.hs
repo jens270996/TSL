@@ -4,16 +4,15 @@ import TSL.AST
 import Inversion.Inverter (invertStatements)
 import Interpretation.Implementation.Computation
 import Utils.Error (ErrorMonad)
-import Control.Monad (when)
 
 type Interpreter a b = a -> Computation b 
 interpretProgram :: Program -> Constant -> ErrorMonad Constant
 interpretProgram p input =
     let functionStore = constructInitialStores p
         variableStore = emptyVariableStore
-    in case runComputation (interpretMain p input) [] [] functionStore variableStore of
-        Right (c, m,_,_) | m == emptyVariableStore -> Right c
-        Right (_,_,_,_) -> Left "Non nil variables in environment after executing main."
+    in case runComputation (interpretMain p input) [] functionStore variableStore of
+        Right (c, m,_) | m == emptyVariableStore -> Right c
+        Right (_,_,_) -> Left "Non nil variables in environment after executing main."
         Left e -> Left e
 
 
@@ -78,7 +77,6 @@ construct (PPair p1 p2) =
 construct (PConst c) = return c
 construct (Involute name p) =
     do c1 <- construct p
-       when (name == "debug") (trace $ "RHS involute: " ++ name ++  " " ++ show p ++ "=" ++ show c1)
        call $ "RHS involute: " ++ name ++ show p ++ "=" ++ showShort c1
        involution <- getInvolution name
        Involution _ pIn _ <- getInvolution name
@@ -93,7 +91,6 @@ construct (Involute name p) =
 construct (Call name p) =
     do c1 <- construct p
        (Procedure _ pIn s pOut) <- getProcedure name
-       when (name == "debug") (trace $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c1)
        call $ "RHS call: " ++ name ++ " " ++ show p ++ "=" ++ showShort c1
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
@@ -106,7 +103,6 @@ construct (Call name p) =
 construct (Uncall name p) =
     do c1 <- construct p
        (Procedure _ pIn s pOut) <- getProcedure name
-       when (name == "debug") (trace $ "RHS uncall: " ++ name ++ " " ++ show p ++ "=" ++ show c1)
        call $ "RHS uncall: "++ name ++ " " ++ show p ++ "=" ++ showShort c1
        oldEnv <- getEnvironment
        withEnvironment emptyVariableStore
@@ -127,7 +123,6 @@ deconstruct (Involute name p) c =
        withEnvironment emptyVariableStore
        Involution _ pIn _ <- getInvolution name
        involution <- getInvolution name
-       when (name == "debug") (trace $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ show c)
        call $ "LHS involute: " ++ name ++ " " ++ show p ++ "=" ++ showShort c
        deconstruct pIn c
        interpretInvolution involution
@@ -139,7 +134,6 @@ deconstruct (Call name p) c =
     do outerEnv <- getEnvironment
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
-       when (name == "debug") (trace $ "LHS call: " ++ name ++ " " ++ show p ++ "=" ++ show c)
        call $ "LHS call: " ++ name ++ " " ++ show pOut ++ "=" ++ showShort c
        deconstruct pOut c
        reverseInterpretStatements s
@@ -151,7 +145,6 @@ deconstruct (Uncall name p) c =
     do outerEnv <- getEnvironment
        withEnvironment emptyVariableStore
        Procedure _ pIn s pOut <- getProcedure name
-       when (name == "debug") (trace $ "LHS uncall: " ++ name ++ " " ++ show p ++ "=" ++ show c)
        call $ "LHS uncall: " ++ name ++ " " ++ show pIn ++ "=" ++ showShort c
        deconstruct pIn c
        interpretStatements s

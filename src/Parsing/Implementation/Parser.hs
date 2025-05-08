@@ -55,13 +55,11 @@ pProcedure = do keyword "procedure"
 
 pStatement :: Parser Statement
 pStatement =
-    choice [ pLoop
-           , pConditional
-           , Skip <$ keyword "skip"
+    pLoop <|> pConditional <|> Skip <$ keyword "skip"
            -- must have try since both replacement and assignment can start with variable
-           , try pReversibleAssignment
-           , pReplacement
-           ] <?> "Expecting a statement."
+           <|> try pReversibleAssignment
+           <|> pReplacement
+           <?> "Expecting a statement."
     
 pLoop :: Parser Statement
 pLoop =
