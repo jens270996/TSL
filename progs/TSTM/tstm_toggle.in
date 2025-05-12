@@ -1,0 +1,34 @@
+//  (Start.(End.(Rules.S_right)))
+
+'(start.(end.(
+((start.(move.(right.q1))).
+((q1.(1.(1.q2))).
+((q1.(0.(0.q3))).
+((qiniR.(blank.(blank.q1R))).
+((q1R.(move.(right.q2R))).
+((q2R.(0.(1.q1R))).
+((q2R.(1.(0.q1R))).
+((q2R.(blank.(blank.q3R))).
+((q3R.(move.(left.q4R))).
+((q4R.(1.(1.q3R))).
+((q4R.(0.(0.q3R))).
+((q4R.(blank.(blank.qfinR))).
+((q1R'.(blank.(blank.qiniR'))).
+((q2R'.(move.(left.q1R'))).
+((q1R'.(1.(0.q2R'))).
+((q1R'.(0.(1.q2R'))).
+((q3R'.(blank.(blank.q2R'))).
+((q4R'.(move.(right.q3R'))).
+((q3R'.(1.(1.q4R'))).
+((q3R'.(0.(0.q4R'))).
+((qfinR'.(blank.(blank.q4R'))).
+((q2.(move.(left.qiniR))).
+((q3.(move.(left.qfinR'))).
+((qfinR.(move.(right.q4))).
+((qiniR'.(move.(right.q5))).
+((q4.(0.(0.q6))).
+((q5.(1.(1.q6))).
+((q6.(move.(left.end))).
+nil)))))))))))))))))))))))))))).
+(1.(0.(1.nil))) //tape
+)))
