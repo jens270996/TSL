@@ -77,15 +77,9 @@ procedure interpretStatement (Env.Statement)
     return (Env.Statement)
 
 involution interpretSymmetricStatement (Env. Statement)
-    (Stype.Statement) <- Statement
-    if Stype = 'assign
-    then (Env.Statement) <- involute xorAssign (Env.Statement)
-    else (Env.(Stype.Statement)) <- involute interpretSymmetricStatement1 (Env.(Stype.Statement))
-    fi Stype='assign
-
-involution interpretSymmetricStatement1 (Env. Statement)
-    (Stype.Statement) <- Statement
-    if Stype = 'replacement
+    Env' ^= Env
+    (Env. Statement) <- call interpretStatement (Env. Statement)
+    (Env.Env') <- (Env'.Env)
 
 procedure interpretExpression (Env.E)
     (Etype.E) <- E
