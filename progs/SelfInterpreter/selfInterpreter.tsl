@@ -114,7 +114,6 @@ procedure deconstruct (Env.(Pattern.Value))
         Pvalue <- (P1.P2)
     else if Ptype = 'involuteS then
         (Env.Pvalue) <- call deconsInvolute (Env.(Pvalue.Value))
-
     else if Ptype = 'callS then
         (Env.Pvalue) <- call deconsCall (Env.(Pvalue.Value))
     else if Ptype = 'uncallS then
