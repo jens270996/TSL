@@ -4,7 +4,6 @@ import TSL.AST
 invertStatements :: [Statement] -> [Statement]
 invertStatements = reverse . (map invertStatement)
 
-
 invertStatement :: Statement -> Statement
 invertStatement (Assign AddR x e) = Assign SubR x e
 invertStatement (Assign SubR x e) = Assign AddR x e

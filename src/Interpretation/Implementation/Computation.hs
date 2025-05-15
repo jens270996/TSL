@@ -97,7 +97,6 @@ printCallStack cs = "[" ++ (concatMap (++ ",\n\n") . reverse $ cs) ++ "]\n"
 printStore :: VariableStore -> String
 printStore = show
 
-
 assertEnvironmentEmptyC :: Computation ()
 assertEnvironmentEmptyC = Computation (\cs _ vars -> if vars == Map.empty
                                                         then Right ((),vars,cs)
